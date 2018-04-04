@@ -10,7 +10,7 @@
       <el-input placeholder="Repo" v-model="repo" />
       <el-button type="primary" @click="fetchRepo" :disabled="!owner || !repo">Start</el-button>
     </div>
-    <chart :options="chartOptions"></chart>
+    <chart :options="chartOptions" ref="chart"></chart>
     <el-dialog
       title="Error: Forbidden"
       :visible.sync="showDialog"
@@ -166,7 +166,16 @@
             }
           })
       },
+      resizeChart() {
+        this.$refs.chart.resize()
+      }
     },
+    mounted() {
+      window.addEventListener('resize', this.resizeChart, false)
+    },
+    beforeDestroy () {
+      window.removeEventListener('resize', this.resizeChart, false)
+    }
   }
 </script>
 
