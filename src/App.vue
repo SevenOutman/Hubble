@@ -19,10 +19,12 @@
   * {
     box-sizing: border-box;
   }
+
   html, body {
     margin: 0;
     padding: 0;
   }
+
   #app {
     font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -31,15 +33,14 @@
     color: #2c3e50;
     margin: 0 auto;
 
-    width: 980px;
-    max-width: 100%;
+    width: 100%;
 
     height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     footer {
-      padding:  50px 0;
+      padding: 20px 0 50px;
     }
   }
 </style>

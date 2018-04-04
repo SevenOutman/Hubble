@@ -11,6 +11,30 @@
       <el-button type="primary" @click="fetchRepo" :disabled="!owner || !repo">Start</el-button>
     </div>
     <chart :options="chartOptions"></chart>
+    <el-dialog
+      title="Error: Forbidden"
+      :visible.sync="showDialog"
+      :modal="false"
+      width="400px"
+    >
+      <p>
+        You are not allowed to access the API.
+        You might need to provide an access token.
+        Follow <a
+        href="https://github.com/settings/tokens/new?scopes=repo&description=Hubble"
+        target="_blank"
+      >this link</a> to create one and paste it below.
+      </p>
+      <div class="input-group" style="width: auto">
+        <el-input v-model="accessToken" placeholder="Paste access token here">
+        </el-input>
+        <el-button @click="saveAccessToken">Save</el-button>
+      </div>
+      <a
+        href="https://github.com/SevenOutman/Hubble#access-token"
+        target="_blank"
+      >Why is this required?</a>
+    </el-dialog>
   </div>
 </template>
 
@@ -30,9 +54,12 @@
     name: 'HelloWorld',
     data() {
       return {
+        accessToken: localStorage.getItem('access_token'),
         owner: 'SevenOutman',
         repo: 'vue-aplayer',
         stargazers: [],
+        showDialog: false,
+        requesting: false,
       }
     },
     computed: {
@@ -42,7 +69,7 @@
           chartData = [this.stargazers[0].starred_at, 1]
         } else if (this.stargazers.length > 1) {
           let start = moment(this.stargazers[0].starred_at).subtract(1, 'day')
-          let end = moment()
+          let end = this.requesting ? moment(this.stargazers[this.stargazers.length - 1].starred_at) : moment()
           let i = 0
           let total = 0
           for (let d = start; d.isSameOrBefore(end, 'day'); d = d.add(1, 'day')) {
@@ -62,62 +89,80 @@
         }
         return {
           tooltip: {
-            trigger: 'axis'
+            trigger: 'axis',
           },
           xAxis: {
             type: 'time',
             axisLine: {
               lineStyle: {
-                color: '#cccccc'
-              }
+                color: '#cccccc',
+              },
             },
             splitLine: {
-              show: false
+              show: false,
             },
             axisLabel: {
-              color: '#333333'
-            }
+              color: '#333333',
+            },
           },
           yAxis: {
             type: 'value',
             axisLine: {
-              show: false
+              show: false,
             },
             axisTick: {
-              show: false
+              show: false,
             },
             splitLine: {
               lineStyle: {
-                type: 'dashed'
-              }
-            }
+                type: 'dashed',
+              },
+            },
           },
           series: [{
             type: 'line',
             lineStyle: {
-              color: '#409EFF'
+              color: '#409EFF',
             },
             showSymbol: false,
             itemStyle: {
               color: '#409EFF',
             },
-            data: chartData
-          }]
+            data: chartData,
+          }],
         }
       },
     },
     methods: {
+      saveAccessToken() {
+        localStorage.setItem('access_token', this.accessToken)
+        this.showDialog = false
+        this.fetchRepo()
+      },
       fetchRepo() {
         this.stargazers = []
+        this.requesting = true
         this.fetchPage()
       },
       fetchPage(pageUrl = `/repos/${this.owner}/${this.repo}/stargazers?per_page=100`) {
-        axios(pageUrl)
+        axios(pageUrl, {
+          headers: {
+            Authorization: this.accessToken ? `token ${this.accessToken}` : undefined,
+          },
+        })
           .then(({ headers, data }) => {
             this.stargazers = [...this.stargazers, ...data]
             const links = parseLinkHeader(headers['link'])
             if (links.next) {
               this.fetchPage(links.next.url)
+            } else {
+              this.requesting = false
+            }
+          })
+          .catch(error => {
+            this.requesting = false
+            if (error.response.status === 403) {
+              this.showDialog = true
             }
           })
       },
@@ -177,20 +222,6 @@
         background-size: contain;
         display: block;
       }
-    }
-
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    li {
-      display: inline-block;
-      margin: 0 10px;
-    }
-
-    a {
-      color: #42b983;
     }
 
   }
