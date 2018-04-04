@@ -8,7 +8,7 @@
     <div class="input-group">
       <el-input placeholder="User/Org" v-model="owner" />
       <el-input placeholder="Repo" v-model="repo" />
-      <el-button type="primary" @click="fetchRepo" :disabled="!owner || !repo">Start</el-button>
+      <el-button type="primary" :loading="requesting" @click="fetchRepo" :disabled="!owner || !repo">Start</el-button>
     </div>
     <chart :options="chartOptions" ref="chart"></chart>
     <el-dialog
@@ -60,6 +60,7 @@
         stargazers: [],
         showDialog: false,
         requesting: false,
+        totalPages: 1
       }
     },
     computed: {
@@ -69,21 +70,25 @@
           chartData = [this.stargazers[0].starred_at, 1]
         } else if (this.stargazers.length > 1) {
           let start = moment(this.stargazers[0].starred_at).subtract(1, 'day')
-          let end = this.requesting ? moment(this.stargazers[this.stargazers.length - 1].starred_at) : moment()
+          let end = moment()
           let i = 0
           let total = 0
           for (let d = start; d.isSameOrBefore(end, 'day'); d = d.add(1, 'day')) {
             let count = 0
-            for (; i < this.stargazers.length; i++) {
-              let starred_at = moment(this.stargazers[i].starred_at)
-              if (starred_at.isSame(d, 'day')) {
-                count++
+            if (i >= this.stargazers.length) {
+              total = undefined
+            } else {
+              for (; i < this.stargazers.length; i++) {
+                let starred_at = moment(this.stargazers[i].starred_at)
+                if (starred_at.isSame(d, 'day')) {
+                  count++
+                }
+                if (starred_at.isAfter(d, 'day')) {
+                  break;
+                }
               }
-              if (starred_at.isAfter(d, 'day')) {
-                break;
-              }
+              total += count
             }
-            total += count
             chartData.push([d.format('YYYY-MM-DD'), total])
           }
         }
@@ -118,6 +123,7 @@
                 type: 'dashed',
               },
             },
+            max: this.totalPages * 100
           },
           series: [{
             type: 'line',
@@ -127,6 +133,11 @@
             showSymbol: false,
             itemStyle: {
               color: '#409EFF',
+            },
+            markPoint: {
+              data: [{
+                type: 'max'
+              }]
             },
             data: chartData,
           }],
@@ -158,6 +169,9 @@
             } else {
               this.requesting = false
             }
+            if (links.last) {
+              this.totalPages = +links.last.page
+            }
           })
           .catch(error => {
             this.requesting = false
@@ -173,7 +187,7 @@
     mounted() {
       window.addEventListener('resize', this.resizeChart, false)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       window.removeEventListener('resize', this.resizeChart, false)
     }
   }

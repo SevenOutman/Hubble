@@ -6,6 +6,7 @@ import 'element-ui/lib/theme-chalk/index.css'
 import ECharts from 'vue-echarts/components/ECharts'
 import 'echarts/lib/chart/line'
 import 'echarts/lib/component/tooltip'
+import 'echarts/lib/component/markPoint'
 import App from './App'
 import router from './router'
 
