@@ -11,7 +11,7 @@ cache:
 
 # GitHub Pages deploy
 before_deploy:
-  - npm run build
+  - npm run predeploy
 
 deploy:
   - provider: pages

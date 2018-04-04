@@ -50,7 +50,7 @@ module.exports = {
     // Paths
     assetsRoot: path.resolve(__dirname, '../dist'),
     assetsSubDirectory: 'static',
-    assetsPublicPath: 'https://sevenoutman.github.io/Hubble/',
+    assetsPublicPath: '//sevenoutman.github.io/Hubble/',
 
     /**
      * Source Maps
