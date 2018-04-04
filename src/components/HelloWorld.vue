@@ -1,14 +1,17 @@
 <template>
   <div class="hello">
-    <h1>
-      Hubble
-    </h1>
-    <h2>Travel through GitHub Stars' history</h2>
-
-    <div class="input-group">
-      <el-input placeholder="User/Org" v-model="owner" />
-      <el-input placeholder="Repo" v-model="repo" />
-      <el-button type="primary" :loading="requesting" @click="fetchRepo" :disabled="!owner || !repo">Start</el-button>
+    <div class="header">
+      <h1>
+        Hubble
+      </h1>
+      <h2>Travel through GitHub Stars' history</h2>
+      <div class="input-group">
+        <el-input placeholder="User/Org" v-model="owner" v-if="!requesting" />
+        <el-input placeholder="Repo" v-model="repo" v-if="!requesting" />
+        <el-button type="primary" :loading="requesting" @click="fetchRepo" :disabled="!owner || !repo">
+          {{ !requesting ? 'Start' : `Counting stars (${stargazers.length})`}}
+        </el-button>
+      </div>
     </div>
     <chart :options="chartOptions" ref="chart"></chart>
     <el-dialog
@@ -39,7 +42,6 @@
 </template>
 
 <script>
-  import GitHub from 'github-api'
   import axiosFactory from 'axios'
   import parseLinkHeader from 'parse-link-header'
   import moment from 'moment'
@@ -55,21 +57,36 @@
     data() {
       return {
         accessToken: localStorage.getItem('access_token'),
-        owner: 'SevenOutman',
-        repo: 'vue-aplayer',
+        owner: 'js-org',
+        repo: 'dns.js.org',
         stargazers: [],
         showDialog: false,
         requesting: false,
-        totalPages: 1
+        totalPages: 1,
+        firstStar: ''
       }
     },
     computed: {
-      chartOptions() {
+      chartData() {
+        if (this.requesting) {
+          let xAxisData = []
+          if (this.firstStar) {
+            let start = moment(this.firstStar).subtract(1, 'day')
+            let end = moment()
+            xAxisData.push([start.format('YYYY-MM-DD'), 0])
+            for (let d = start.add(1, 'day'); d.isSameOrBefore(end, 'day'); d = d.add(1, 'day')) {
+              xAxisData.push([d.format('YYYY-MM-DD')])
+            }
+          }
+          console.log('xAxis', xAxisData)
+          return xAxisData
+        }
         let chartData = []
         if (this.stargazers.length === 1) {
-          chartData = [this.stargazers[0].starred_at, 1]
+          chartData = [this.stargazers[0], 1]
         } else if (this.stargazers.length > 1) {
-          let start = moment(this.stargazers[0].starred_at).subtract(1, 'day')
+          let start = moment(this.stargazers[0]).subtract(1, 'day')
+          // let end = moment(this.stargazers[this.stargazers.length - 1].starred_at)
           let end = moment()
           let i = 0
           let total = 0
@@ -78,20 +95,27 @@
             if (i >= this.stargazers.length) {
               total = undefined
             } else {
-              for (; i < this.stargazers.length; i++) {
-                let starred_at = moment(this.stargazers[i].starred_at)
-                if (starred_at.isSame(d, 'day')) {
-                  count++
+              if (d.isBefore(moment(this.stargazers[i]), 'day')) {
+              } else {
+                for (; i < this.stargazers.length; i++) {
+                  let starred_at = moment(this.stargazers[i])
+                  if (starred_at.isSame(d, 'day')) {
+                    count++
+                  }
+                  if (starred_at.isAfter(d, 'day')) {
+                    break;
+                  }
                 }
-                if (starred_at.isAfter(d, 'day')) {
-                  break;
-                }
+                total += count
               }
-              total += count
             }
             chartData.push([d.format('YYYY-MM-DD'), total])
           }
         }
+        console.log('chartData')
+        return chartData
+      },
+      chartOptions() {
         return {
           tooltip: {
             trigger: 'axis',
@@ -139,7 +163,7 @@
                 type: 'max'
               }]
             },
-            data: chartData,
+            data: this.chartData,
           }],
         }
       },
@@ -153,36 +177,51 @@
       fetchRepo() {
         this.stargazers = []
         this.requesting = true
-        this.fetchPage()
+        this.fetchFirstPage()
       },
-      fetchPage(pageUrl = `/repos/${this.owner}/${this.repo}/stargazers?per_page=100`) {
-        axios(pageUrl, {
+      fetchPage(page) {
+        const pageUrl = `/repos/${this.owner}/${this.repo}/stargazers?per_page=100&page=${page}`
+        return axios(pageUrl, {
           headers: {
             Authorization: this.accessToken ? `token ${this.accessToken}` : undefined,
           },
         })
-          .then(({ headers, data }) => {
-            this.stargazers = [...this.stargazers, ...data]
-            const links = parseLinkHeader(headers['link'])
-            if (links.next) {
-              this.fetchPage(links.next.url)
-            } else {
+          .then((res) => {
+            this.stargazers = [...this.stargazers, ...res.data.map(({ starred_at }) => starred_at)].sort()
+            if (page > 1 && this.stargazers.length > (this.totalPages - 1) * 100) {
               this.requesting = false
             }
-            if (links.last) {
-              this.totalPages = +links.last.page
-            }
+            return res
           })
           .catch(error => {
             this.requesting = false
-            if (error.response.status === 403) {
+            if (error.response.status > 400) {
+              this.accessToken = ''
               this.showDialog = true
+            }
+          })
+      },
+      fetchFirstPage() {
+        this.fetchPage(1)
+          .then(({ headers, data }) => {
+            if (data.length > 0) {
+              this.firstStar = data[0].starred_at
+            }
+
+            const links = parseLinkHeader(headers['link'])
+            this.totalPages = +links.last.page
+            if (this.totalPages === 1) {
+              this.requesting = false
+            } else {
+              for (let page = 2; page <= this.totalPages; page++) {
+                this.fetchPage(page)
+              }
             }
           })
       },
       resizeChart() {
         this.$refs.chart.resize()
-      }
+      },
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart, false)
@@ -201,11 +240,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+
     .input-group {
       display: flex;
+      align-items: center;
       width: 400px;
       margin: 28px auto 0;
       .el-input {
+        flex-grow: 1;
         & > input {
           border-top-right-radius: 0;
           border-bottom-right-radius: 0;
@@ -218,11 +260,16 @@
           }
         }
       }
+      .el-button {
+        flex-grow: 1;
+        flex-shrink: 1;
+      }
     }
 
     .echarts {
       flex-grow: 1;
       width: 100%;
+      height: auto;
     }
 
     h1, h2 {
