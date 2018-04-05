@@ -95,6 +95,7 @@
 
         error({ networkError }) {
           if (+networkError.statusCode > 400) {
+            this.requesting = false
             this.accessToken = ''
             this.showDialog = true
           }
