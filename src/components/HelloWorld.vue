@@ -78,7 +78,6 @@
               xAxisData.push([d.format('YYYY-MM-DD')])
             }
           }
-          console.log('xAxis', xAxisData)
           return xAxisData
         }
         let chartData = []
@@ -112,7 +111,6 @@
             chartData.push([d.format('YYYY-MM-DD'), total])
           }
         }
-        console.log('chartData')
         return chartData
       },
       chartOptions() {
@@ -207,14 +205,19 @@
             if (data.length > 0) {
               this.firstStar = data[0].starred_at
             }
-
             const links = parseLinkHeader(headers['link'])
-            this.totalPages = +links.last.page
-            if (this.totalPages === 1) {
+            if (!links) {
+              // no more than 100 stars
+              // only 1 page
               this.requesting = false
             } else {
-              for (let page = 2; page <= this.totalPages; page++) {
-                this.fetchPage(page)
+              this.totalPages = +links.last.page
+              if (this.totalPages === 1) {
+                this.requesting = false
+              } else {
+                for (let page = 2; page <= this.totalPages; page++) {
+                  this.fetchPage(page)
+                }
               }
             }
           })
