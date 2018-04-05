@@ -1,5 +1,4 @@
-# Hubble
-> :telescope: Travel through GitHub Stars' history
+![Screenshot](https://i.loli.net/2018/04/06/5ac64e91a2ea3.png)
 
 ### Features
 - Reveal a repository's star history (no more than 6,000 stars).

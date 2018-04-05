@@ -12,12 +12,19 @@
     "predeploy": "npm run build && echo 'hubble.js.org' > dist/CNAME"
   },
   "dependencies": {
+    "apollo-cache-inmemory": "^1.1.12",
+    "apollo-client": "^2.2.8",
+    "apollo-link": "^1.2.1",
+    "apollo-link-http": "^1.5.3",
     "axios": "^0.18.0",
     "element-ui": "^2.3.2",
     "github-api": "^3.0.0",
+    "graphql": "^0.13.2",
+    "graphql-tag": "^2.8.0",
     "moment": "^2.22.0",
     "parse-link-header": "^1.0.1",
     "vue": "^2.5.2",
+    "vue-apollo": "^3.0.0-beta.5",
     "vue-echarts": "^3.0.7",
     "vue-router": "^3.0.1"
   },

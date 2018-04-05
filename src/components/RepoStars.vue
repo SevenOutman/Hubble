@@ -37,19 +37,74 @@
 
 <script>
   import axiosFactory from 'axios'
-  import parseLinkHeader from 'parse-link-header'
   import moment from 'moment'
 
-  const axios = axiosFactory.create({
-    baseURL: 'https://api.github.com',
-    headers: {
-      Accept: 'application/vnd.github.v3.star+json',
-    },
-  })
+  import gql from 'graphql-tag'
+
   export default {
-    name: 'HelloWorld',
+    name: 'RepoStars',
+    apollo: {
+      repository: {
+        query: gql`
+          query RepoStars($owner: String!, $name: String!, $afterPointer: String) {
+            repository(owner: $owner, name: $name) {
+              stargazers(after: $afterPointer, first: 100) {
+                edges {
+                  starredAt
+                },
+                pageInfo {
+                  endCursor
+                  hasPreviousPage
+                  hasNextPage
+                }
+                totalCount
+              }
+            }
+          }
+        `,
+        variables() {
+          return {
+            owner: this.owner,
+            name: this.repo,
+            afterPointer: this.afterPointer
+          }
+        },
+        skip() {
+          return !this.requesting
+        },
+
+        // @see https://github.com/Akryum/vue-apollo/issues/48
+        manual: true,
+        result({ data, loading }) {
+          if (!loading) {
+            const { stargazers: { edges, pageInfo: { endCursor, hasPreviousPage, hasNextPage }, totalCount } } = data.repository
+            this.stargazers = [...this.stargazers, ...edges.map(edge => edge.starredAt)]
+            this.totalPages = Math.ceil(totalCount / 100)
+
+            if (!hasPreviousPage && edges.length) {
+              this.firstStar = edges[0].starredAt
+            }
+
+            this.afterPointer = endCursor
+
+            if (!hasNextPage) {
+              this.requesting = false
+            }
+          }
+        },
+
+        error({ networkError }) {
+          if (+networkError.statusCode > 400) {
+            this.accessToken = ''
+            this.showDialog = true
+          }
+        }
+      }
+    },
     data() {
       return {
+        repository: '',
+        afterPointer: null,
         accessToken: localStorage.getItem('access_token'),
         owner: 'js-org',
         repo: 'dns.js.org',
@@ -168,63 +223,19 @@
       },
       fetchRepo() {
         this.stargazers = []
+        this.firstStar = ''
+        this.afterPointer = null
         this.requesting = true
-        this.fetchFirstPage()
-      },
-      fetchPage(page) {
-        const pageUrl = `/repos/${this.owner}/${this.repo}/stargazers?per_page=100&page=${page}`
-        return axios(pageUrl, {
-          headers: {
-            Authorization: this.accessToken ? `token ${this.accessToken}` : undefined,
-          },
-        })
-          .then((res) => {
-            this.stargazers = [...this.stargazers, ...res.data.map(({ starred_at }) => starred_at)].sort()
-            if (page > 1 && this.stargazers.length > (this.totalPages - 1) * 100) {
-              this.requesting = false
-            }
-            return res
-          })
-          .catch(error => {
-            this.requesting = false
-            if (error.response.status > 400) {
-              this.accessToken = ''
-              this.showDialog = true
-            }
-          })
-      },
-      fetchFirstPage() {
-        this.fetchPage(1)
-          .then(({ headers, data }) => {
-            if (data.length > 0) {
-              this.firstStar = data[0].starred_at
-            }
-            const links = parseLinkHeader(headers['link'])
-            if (!links) {
-              // no more than 100 stars
-              // only 1 page
-              this.requesting = false
-            } else {
-              this.totalPages = +links.last.page
-              if (this.totalPages === 1) {
-                this.requesting = false
-              } else {
-                for (let page = 2; page <= this.totalPages; page++) {
-                  this.fetchPage(page)
-                }
-              }
-            }
-          })
       },
       resizeChart() {
         this.$refs.chart.resize()
       },
     },
     mounted() {
-      window.addEventListener('resize', this.resizeChart, false)
+      window.addEventListener('resize', this.resizeChart)
     },
     beforeDestroy() {
-      window.removeEventListener('resize', this.resizeChart, false)
+      window.removeEventListener('resize', this.resizeChart)
     }
   }
 </script>

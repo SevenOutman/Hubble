@@ -9,6 +9,7 @@ import 'echarts/lib/component/tooltip'
 import 'echarts/lib/component/markPoint'
 import App from './App'
 import router from './router'
+import provide from './graphql/apollo'
 
 Vue.use(ElementUI)
 Vue.component('chart', ECharts)
@@ -18,6 +19,7 @@ Vue.config.productionTip = false
 new Vue({
   el: '#app',
   router,
+  provide,
   components: { App },
   template: '<App/>',
 })

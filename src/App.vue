@@ -1,6 +1,11 @@
 <template>
   <div id="app">
-
+    <header>
+      <h1>
+        Hubble
+      </h1>
+      <h2>Travel through GitHub Stars' history</h2>
+    </header>
     <router-view />
 
     <footer align="center">
@@ -39,6 +44,30 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+
+    header {
+      h1, h2 {
+        font-weight: normal;
+      }
+
+      h1 {
+        font-size: 48px;
+        position: relative;
+        display: inline-block;
+        margin-bottom: 0;
+        &::before {
+          content: '';
+          background-image: url(assets/logo.png);
+          position: absolute;
+          left: -53px;
+          top: 0;
+          height: 48px;
+          width: 48px;
+          background-size: contain;
+          display: block;
+        }
+      }
+    }
     footer {
       padding: 20px 0 50px;
     }
