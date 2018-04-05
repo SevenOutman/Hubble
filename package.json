@@ -9,7 +9,7 @@
     "start": "npm run dev",
     "lint": "eslint --ext .js,.vue src",
     "build": "node build/build.js",
-    "predeploy": "npm run build"
+    "predeploy": "npm run build && echo 'hubble.js.org' > dist/CNAME"
   },
   "dependencies": {
     "axios": "^0.18.0",
