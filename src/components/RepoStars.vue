@@ -4,7 +4,7 @@
       <el-input placeholder="User/Org" v-model="owner" v-if="!requesting" />
       <el-input placeholder="Repo" v-model="repo" v-if="!requesting" />
       <el-button type="primary" :loading="requesting" @click="fetchRepo" :disabled="!owner || !repo">
-        {{ !requesting ? 'Start' : `Counting stars (${stargazers.length})`}}
+        {{ !requesting ? 'Start' : `Counting stars (${stargazersCount})`}}
       </el-button>
     </div>
     <chart :options="chartOptions" ref="chart"></chart>
@@ -41,6 +41,7 @@
 
   import gql from 'graphql-tag'
 import { setInterval, clearInterval } from 'timers';
+import { create } from 'domain';
 
   export default {
     name: 'RepoStars',
@@ -81,12 +82,11 @@ import { setInterval, clearInterval } from 'timers';
         result({ data, loading }) {
           if (!loading) {
             const { createdAt, stargazers: { edges, pageInfo: { endCursor, hasPreviousPage, hasNextPage }, totalCount } } = data.repository
-            this.createdAt = createdAt
-            // this.cachedStargazers = [...this.cachedStargazers, ...edges.map(edge => edge.starredAt)]
-            this.totalPages = Math.ceil(totalCount / 100)
 
             if (!hasPreviousPage && edges.length) {
-              this.firstStar = edges[0].starredAt
+              this.chartData = [
+                [createdAt.substr(0, 10), 0]
+              ]
             }
 
             this.afterPointer = endCursor
@@ -95,7 +95,7 @@ import { setInterval, clearInterval } from 'timers';
               this.requesting = false
             }
             this.$nextTick(() => {
-              this.stargazers = [...this.stargazers, ...edges.map(edge => edge.starredAt)]
+              this.updateChartData(edges.map(edge => edge.starredAt.substr(0, 10)))
             })
           }
         },
@@ -116,63 +116,17 @@ import { setInterval, clearInterval } from 'timers';
         accessToken: localStorage.getItem('access_token'),
         owner: 'js-org',
         repo: 'dns.js.org',
-        createdAt: '',
-        stargazers: [],
-        cachedStargazers: [],
+        chartData: [],
         showDialog: false,
         requesting: false,
-        totalPages: 1,
-        firstStar: ''
       }
     },
     computed: {
-      chartData() {
-        // if (this.requesting) {
-        //   let xAxisData = []
-        //   if (this.firstStar) {
-        //     let start = moment(this.firstStar).subtract(1, 'day')
-        //     let end = moment()
-        //     xAxisData.push([start.format('YYYY-MM-DD'), 0])
-        //     for (let d = start.add(1, 'day'); d.isSameOrBefore(end, 'day'); d = d.add(1, 'day')) {
-        //       xAxisData.push([d.format('YYYY-MM-DD')])
-        //     }
-        //   }
-        //   return xAxisData
-        // }
-        let chartData = []
-        if (this.createdAt) {
-          let start = moment(this.createdAt)
-          if (!this.stargazers.length) {
-            return [
-              [start.format('YYYY-MM-DD'), 0]
-            ]
-          }
-          let end = moment(this.stargazers[this.stargazers.length - 1])
-          let i = 0
-          let total = 0
-          for (let d = start; d.isSameOrBefore(end, 'day'); d = d.add(1, 'day')) {
-            let count = 0
-            if (i >= this.stargazers.length) {
-              total = 0
-            } else {
-              if (d.isBefore(moment(this.stargazers[i]), 'day')) {
-              } else {
-                for (; i < this.stargazers.length; i++) {
-                  let starred_at = moment(this.stargazers[i])
-                  if (starred_at.isSame(d, 'day')) {
-                    count++
-                  }
-                  if (starred_at.isAfter(d, 'day')) {
-                    break;
-                  }
-                }
-                total += count
-              }
-            }
-            chartData.push([d.format('YYYY-MM-DD'), total])
-          }
+      stargazersCount() {
+        if (!this.chartData.length) {
+          return 0
         }
-        return chartData
+        return this.chartData[this.chartData.length - 1][1]
       },
       chartOptions() {
         return {
@@ -230,26 +184,40 @@ import { setInterval, clearInterval } from 'timers';
       },
     },
     methods: {
+      updateChartData(stargazers) {
+        let lastData = this.chartData[this.chartData.length - 1]
+        let count = 0
+        stargazers.forEach(date => {
+          if (lastData[0] === date) {
+            lastData[1]++
+          } else if (lastData[0] < date) {
+            while (lastData[0] < date) {
+              if (this.chartData.indexOf(lastData) === -1) {
+                this.chartData.push(lastData)
+              }
+
+              lastData = [
+                moment(lastData[0]).add(1, 'day').format('YYYY-MM-DD'),
+                lastData[1]
+              ]
+            }
+            lastData[1]++
+          } else if (lastData[0] > date) {
+          }
+        })
+        if (this.chartData.indexOf(lastData) === -1) {
+          this.chartData.push(lastData)
+        }
+      },
       saveAccessToken() {
         localStorage.setItem('access_token', this.accessToken)
         this.showDialog = false
         this.fetchRepo()
       },
       fetchRepo() {
-        this.stargazers = []
-        this.cachedStargazers = []
-        this.firstStar = ''
+        this.chartData = []
         this.afterPointer = null
         this.requesting = true
-        // this.interval = setInterval(this.syncCached, 3000)
-      },
-      syncCached() {
-        if (this.cachedStargazers.length !== this.stargazers.length) {
-          this.stargazers = [...this.cachedStargazers]
-        }
-        if (!this.requesting) {
-          clearInterval(this.interval)
-        }
       },
       resizeChart() {
         this.$refs.chart.resize()
