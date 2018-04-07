@@ -40,6 +40,7 @@
   import moment from 'moment'
 
   import gql from 'graphql-tag'
+import { setInterval, clearInterval } from 'timers';
 
   export default {
     name: 'RepoStars',
@@ -48,6 +49,7 @@
         query: gql`
           query RepoStars($owner: String!, $name: String!, $afterPointer: String) {
             repository(owner: $owner, name: $name) {
+              createdAt
               stargazers(after: $afterPointer, first: 100) {
                 edges {
                   starredAt
@@ -62,6 +64,7 @@
             }
           }
         `,
+        fetchPolicy: 'network-only',
         variables() {
           return {
             owner: this.owner,
@@ -77,8 +80,9 @@
         manual: true,
         result({ data, loading }) {
           if (!loading) {
-            const { stargazers: { edges, pageInfo: { endCursor, hasPreviousPage, hasNextPage }, totalCount } } = data.repository
-            this.stargazers = [...this.stargazers, ...edges.map(edge => edge.starredAt)]
+            const { createdAt, stargazers: { edges, pageInfo: { endCursor, hasPreviousPage, hasNextPage }, totalCount } } = data.repository
+            this.createdAt = createdAt
+            // this.cachedStargazers = [...this.cachedStargazers, ...edges.map(edge => edge.starredAt)]
             this.totalPages = Math.ceil(totalCount / 100)
 
             if (!hasPreviousPage && edges.length) {
@@ -90,6 +94,9 @@
             if (!hasNextPage) {
               this.requesting = false
             }
+            this.$nextTick(() => {
+              this.stargazers = [...this.stargazers, ...edges.map(edge => edge.starredAt)]
+            })
           }
         },
 
@@ -109,7 +116,9 @@
         accessToken: localStorage.getItem('access_token'),
         owner: 'js-org',
         repo: 'dns.js.org',
+        createdAt: '',
         stargazers: [],
+        cachedStargazers: [],
         showDialog: false,
         requesting: false,
         totalPages: 1,
@@ -118,31 +127,33 @@
     },
     computed: {
       chartData() {
-        if (this.requesting) {
-          let xAxisData = []
-          if (this.firstStar) {
-            let start = moment(this.firstStar).subtract(1, 'day')
-            let end = moment()
-            xAxisData.push([start.format('YYYY-MM-DD'), 0])
-            for (let d = start.add(1, 'day'); d.isSameOrBefore(end, 'day'); d = d.add(1, 'day')) {
-              xAxisData.push([d.format('YYYY-MM-DD')])
-            }
-          }
-          return xAxisData
-        }
+        // if (this.requesting) {
+        //   let xAxisData = []
+        //   if (this.firstStar) {
+        //     let start = moment(this.firstStar).subtract(1, 'day')
+        //     let end = moment()
+        //     xAxisData.push([start.format('YYYY-MM-DD'), 0])
+        //     for (let d = start.add(1, 'day'); d.isSameOrBefore(end, 'day'); d = d.add(1, 'day')) {
+        //       xAxisData.push([d.format('YYYY-MM-DD')])
+        //     }
+        //   }
+        //   return xAxisData
+        // }
         let chartData = []
-        if (this.stargazers.length === 1) {
-          chartData = [this.stargazers[0], 1]
-        } else if (this.stargazers.length > 1) {
-          let start = moment(this.stargazers[0]).subtract(1, 'day')
-          // let end = moment(this.stargazers[this.stargazers.length - 1].starred_at)
-          let end = moment()
+        if (this.createdAt) {
+          let start = moment(this.createdAt)
+          if (!this.stargazers.length) {
+            return [
+              [start.format('YYYY-MM-DD'), 0]
+            ]
+          }
+          let end = moment(this.stargazers[this.stargazers.length - 1])
           let i = 0
           let total = 0
           for (let d = start; d.isSameOrBefore(end, 'day'); d = d.add(1, 'day')) {
             let count = 0
             if (i >= this.stargazers.length) {
-              total = undefined
+              total = 0
             } else {
               if (d.isBefore(moment(this.stargazers[i]), 'day')) {
               } else {
@@ -195,7 +206,9 @@
                 type: 'dashed',
               },
             },
-            max: this.totalPages * 100
+            max (value) {
+              return (Math.floor(value.max/ 100) + 1) * 100
+            }
           },
           series: [{
             type: 'line',
@@ -224,9 +237,19 @@
       },
       fetchRepo() {
         this.stargazers = []
+        this.cachedStargazers = []
         this.firstStar = ''
         this.afterPointer = null
         this.requesting = true
+        // this.interval = setInterval(this.syncCached, 3000)
+      },
+      syncCached() {
+        if (this.cachedStargazers.length !== this.stargazers.length) {
+          this.stargazers = [...this.cachedStargazers]
+        }
+        if (!this.requesting) {
+          clearInterval(this.interval)
+        }
       },
       resizeChart() {
         this.$refs.chart.resize()
