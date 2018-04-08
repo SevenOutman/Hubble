@@ -1,47 +1,33 @@
 <template>
-  <div class="hello">
+  <div class="home">
+    <header>
+      <h1>
+        Hubble
+      </h1>
+      <h2>Travel through GitHub Stars' history</h2>
+    </header>
+    <main>
     <div class="input-group">
       <el-input placeholder="User/Org" v-model="owner" v-if="!requesting" />
       <el-input placeholder="Repo" v-model="repo" v-if="!requesting" />
       <el-button type="primary" :loading="requesting" @click="fetchRepo" :disabled="!owner || !repo">
         {{ !requesting ? 'Start' : `Counting stars (${stargazersCount})`}}
       </el-button>
+
     </div>
     <chart :options="chartOptions" ref="chart"></chart>
-    <el-dialog
-      title="Error: Forbidden"
-      :visible.sync="showDialog"
-      :modal="false"
-      width="400px"
-    >
-      <p>
-        You are not allowed to access the API.
-        You might need to provide an access token.
-        Follow <a
-        href="https://github.com/settings/tokens/new?scopes=repo&description=Hubble"
-        target="_blank"
-      >this link</a> to create one and paste it below.
-      </p>
-      <div class="input-group" style="width: auto">
-        <el-input v-model="accessToken" placeholder="Paste access token here">
-        </el-input>
-        <el-button @click="saveAccessToken">Save</el-button>
-      </div>
-      <a
-        href="https://github.com/SevenOutman/Hubble#access-token"
-        target="_blank"
-      >Why is this required?</a>
-    </el-dialog>
+    </main>
+    <footer align="center">
+      <router-link to="/my-stars-this-year">How many stars have I earned this year?</router-link>
+    </footer>
   </div>
 </template>
 
 <script>
-  import axiosFactory from 'axios'
   import moment from 'moment'
-
   import gql from 'graphql-tag'
-import { setInterval, clearInterval } from 'timers';
-import { create } from 'domain';
+
+  import EventBus from '../bus'
 
   export default {
     name: 'RepoStars',
@@ -49,6 +35,9 @@ import { create } from 'domain';
       repository: {
         query: gql`
           query RepoStars($owner: String!, $name: String!, $afterPointer: String) {
+            viewer {
+              login
+            }
             repository(owner: $owner, name: $name) {
               createdAt
               stargazers(after: $afterPointer, first: 100) {
@@ -65,7 +54,6 @@ import { create } from 'domain';
             }
           }
         `,
-        fetchPolicy: 'network-only',
         variables() {
           return {
             owner: this.owner,
@@ -103,8 +91,7 @@ import { create } from 'domain';
         error({ networkError }) {
           if (+networkError.statusCode > 400) {
             this.requesting = false
-            this.accessToken = ''
-            this.showDialog = true
+            EventBus.$emit('require:accessToken', this.fetchRepo)
           }
         }
       }
@@ -113,11 +100,9 @@ import { create } from 'domain';
       return {
         repository: '',
         afterPointer: null,
-        accessToken: localStorage.getItem('access_token'),
         owner: 'js-org',
         repo: 'dns.js.org',
         chartData: [],
-        showDialog: false,
         requesting: false,
       }
     },
@@ -209,11 +194,6 @@ import { create } from 'domain';
           this.chartData.push(lastData)
         }
       },
-      saveAccessToken() {
-        localStorage.setItem('access_token', this.accessToken)
-        this.showDialog = false
-        this.fetchRepo()
-      },
       fetchRepo() {
         this.chartData = []
         this.afterPointer = null
@@ -234,18 +214,65 @@ import { create } from 'domain';
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="less">
-  .hello {
-    flex-grow: 1;
+  .home {
     width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
+
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
     align-items: center;
 
+    header {
+      h1, h2 {
+        font-weight: normal;
+      }
+
+      h1 {
+        font-size: 48px;
+        position: relative;
+        display: inline-block;
+        margin-bottom: 0;
+        &::before {
+          content: '';
+          background-image: url(../assets/logo.png);
+          position: absolute;
+          left: -53px;
+          top: 0;
+          height: 48px;
+          width: 48px;
+          background-size: contain;
+          display: block;
+        }
+      }
+    }
+    footer {
+      padding: 20px 0 50px;
+    }
+
+    main {
+      flex-grow: 1;
+      width: 100%;
+
+      display: flex;
+      flex-direction: column;
+    align-items: center;
     .input-group {
       display: flex;
       align-items: center;
       width: 400px;
       margin: 28px auto 0;
+      position: relative;
+      .addon {
+        position: absolute;
+        left: 100%;
+        margin-left: 1em;
+        white-space: nowrap;
+      }
       .el-input {
         flex-grow: 1;
         & > input {
@@ -271,6 +298,6 @@ import { create } from 'domain';
       width: 100%;
       height: auto;
     }
-
+    }
   }
 </style>
