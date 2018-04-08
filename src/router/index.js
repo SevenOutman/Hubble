@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Repo from '@/components/RepoStars'
+import Home from '@/components/Home'
+import MyStars from '@/components/MyStars'
 
 Vue.use(Router)
 
@@ -8,8 +9,11 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'RepoStars',
-      component: Repo
+      component: Home
+    },
+    {
+      path: '/my-stars-this-year',
+      component: MyStars
     }
   ]
 })
