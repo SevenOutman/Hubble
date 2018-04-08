@@ -1,7 +1,8 @@
 ![Screenshot](https://i.loli.net/2018/04/06/5ac6740996ec9.png)
 
 ### Features
-- Reveal a repository's star history (no more than 6,000 stars).
+- Reveal a repository's star history.
+- How many stars have I earned this year?
 
 ### Motivation
 
