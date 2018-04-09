@@ -28,6 +28,7 @@
   import gql from 'graphql-tag'
 
   import EventBus from '../bus'
+import { Z_DEFAULT_COMPRESSION } from 'zlib';
 
   export default {
     name: 'RepoStars',
@@ -35,9 +36,6 @@
       repository: {
         query: gql`
           query RepoStars($owner: String!, $name: String!, $afterPointer: String) {
-            viewer {
-              login
-            }
             repository(owner: $owner, name: $name) {
               createdAt
               stargazers(after: $afterPointer, first: 100) {
@@ -84,6 +82,9 @@
             }
             this.$nextTick(() => {
               this.updateChartData(edges.map(edge => edge.starredAt.substr(0, 10)))
+              if (!hasNextPage) {
+                this.suffixChartData()
+              }
             })
           }
         },
@@ -169,6 +170,15 @@
       },
     },
     methods: {
+      suffixChartData() {
+        let [lastDate, total] = this.chartData[this.chartData.length - 1]
+        let append = []
+        let today = moment()
+        for (let d = moment(lastDate).add(1, 'day'); d.isSameOrBefore(today, 'day'); d = d.add(1, 'day')) {
+          append.push([d.format('YYYY-MM-DD'), total])
+        }
+        this.chartData = [...this.chartData, ...append]
+      },
       updateChartData(stargazers) {
         let lastData = this.chartData[this.chartData.length - 1]
         let count = 0
