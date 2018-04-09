@@ -29,17 +29,6 @@
 
   import EventBus from '../bus'
 
-  const getRandomRepo = () => {
-    const repos = [
-      // Gratitude to serving the domain name
-      ['js-org', 'dns.js.org']
-      
-      // custom
-      // ...
-    ]
-    return repos[Math.trunc(Math.random() * repos.length)]
-  }
-
   export default {
     name: 'RepoStars',
     apollo: {
@@ -111,8 +100,8 @@
       return {
         repository: '',
         afterPointer: null,
-        owner: '',
-        repo: '',
+        owner: 'js-org',
+        repo: 'dns.js.org',
         chartData: [],
         requesting: false,
       }
@@ -223,17 +212,6 @@
         this.$refs.chart.resize()
       },
     },
-    created() {
-      const { owner = '', repo = '' } = this.$route.query
-      if (owner || repo) {
-        this.owner = owner
-        this.repo = repo
-      } else {
-        const [ randomOwner, randomRepo ] = getRandomRepo()
-        this.owner = randomOwner
-        this.repo = randomRepo
-      }
-    },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
     },
@@ -296,6 +274,7 @@
       display: flex;
       align-items: center;
       width: 400px;
+      max-width: 96%;
       margin: 28px auto 0;
       position: relative;
       .addon {
