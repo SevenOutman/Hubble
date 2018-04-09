@@ -9,8 +9,8 @@
     <main>
     <div class="input-group">
       <el-input :value="`Stars ${username} have earned this year`" readonly v-if="!requesting" />
-      <el-button type="primary" :loading="requesting">
-        {{ !requesting ? stargazersCount : `Counting stars (${stargazersCount})`}}
+      <el-button type="primary" :loading="requesting" @click="start">
+        {{ !requesting ? `${stargazersCount}` : `Counting stars (${stargazersCount})`}}
       </el-button>
     </div>
     <chart :options="chartOptions" ref="chart"></chart>
@@ -58,7 +58,6 @@
           }
         },
         skip() {
-
           return !this.requesting
         },
         // @see https://github.com/Akryum/vue-apollo/issues/48
@@ -78,8 +77,8 @@
         },
 
         error({ networkError }) {
+          this.requesting = false
           if (+networkError.statusCode > 400) {
-            this.requesting = false
             EventBus.$emit('require:accessToken', this.start)
           }
         }
@@ -215,6 +214,9 @@
     },
     methods: {
       start() {
+        this.repo = null
+        this.beforePointer = null
+        this.afterPointer = null
         this.reposWithStars = []
         this.chartData = []
         this.requesting = true

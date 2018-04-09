@@ -90,8 +90,8 @@ import { Z_DEFAULT_COMPRESSION } from 'zlib';
         },
 
         error({ networkError }) {
+          this.requesting = false
           if (+networkError.statusCode > 400) {
-            this.requesting = false
             EventBus.$emit('require:accessToken', this.fetchRepo)
           }
         }
