@@ -28,7 +28,17 @@
   import gql from 'graphql-tag'
 
   import EventBus from '../bus'
-import { Z_DEFAULT_COMPRESSION } from 'zlib';
+
+  const getRandomRepo = () => {
+    const repos = [
+      // Gratitude to serving the domain name
+      ['js-org', 'dns.js.org']
+      
+      // custom
+      // ...
+    ]
+    return repos[Math.trunc(Math.random() * repos.length)]
+  }
 
   export default {
     name: 'RepoStars',
@@ -101,8 +111,8 @@ import { Z_DEFAULT_COMPRESSION } from 'zlib';
       return {
         repository: '',
         afterPointer: null,
-        owner: 'js-org',
-        repo: 'dns.js.org',
+        owner: '',
+        repo: '',
         chartData: [],
         requesting: false,
       }
@@ -212,6 +222,17 @@ import { Z_DEFAULT_COMPRESSION } from 'zlib';
       resizeChart() {
         this.$refs.chart.resize()
       },
+    },
+    created() {
+      const { owner = '', repo = '' } = this.$route.query
+      if (owner || repo) {
+        this.owner = owner
+        this.repo = repo
+      } else {
+        const [ randomOwner, randomRepo ] = getRandomRepo()
+        this.owner = randomOwner
+        this.repo = randomRepo
+      }
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
