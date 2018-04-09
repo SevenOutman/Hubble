@@ -30,14 +30,14 @@
   const YEAR = new Date().getFullYear()
 
   export default {
-    name: 'RepoStars',
+    name: 'MyStars',
     apollo: {
       repositories: {
         query: gql`
-          query MyBestarredRepos($afterPointer: String) {
+          query MyBestarredRepos($after: String) {
             viewer {
               login
-              repositories(first: 100, after: $afterPointer, orderBy: { field: STARGAZERS, direction: DESC }) {
+              repositories(first: 100, after: $after, orderBy: { field: STARGAZERS, direction: DESC }) {
                 nodes {
                   name
                   stargazers {
@@ -52,9 +52,10 @@
             }
           }
         `,
+        fetchPolicy: 'network-only',
         variables() {
           return {
-            afterPointer: this.afterPointer
+            after: this.afterPointer
           }
         },
         skip() {
@@ -100,6 +101,7 @@
             }
           }
         `,
+        fetchPolicy: 'network-only',
         variables() {
           return {
             owner: this.username,
@@ -214,9 +216,6 @@
     },
     methods: {
       start() {
-        this.repo = null
-        this.beforePointer = null
-        this.afterPointer = null
         this.reposWithStars = []
         this.chartData = []
         this.requesting = true
