@@ -26,8 +26,18 @@
 <script>
   import moment from 'moment'
   import gql from 'graphql-tag'
-
   import EventBus from '../bus'
+
+  const getRandomRepo = () => {
+    const repos = [
+      // Gratitude to serving the domain name
+      ['js-org', 'dns.js.org']
+      
+      // custom
+      // ...
+    ]
+    return repos[Math.trunc(Math.random() * repos.length)]
+  }
 
   export default {
     name: 'RepoStars',
@@ -211,6 +221,17 @@
       resizeChart() {
         this.$refs.chart.resize()
       },
+    },
+    created() {
+      const { owner = '', repo = '' } = this.$route.query
+      if (owner || repo) {
+        this.owner = owner
+        this.repo = repo
+      } else {
+        const [ randomOwner, randomRepo ] = getRandomRepo()
+        this.owner = randomOwner
+        this.repo = randomRepo
+      }
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
