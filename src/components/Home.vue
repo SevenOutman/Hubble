@@ -28,7 +28,6 @@
   import gql from 'graphql-tag'
 
   import EventBus from '../bus'
-import { Z_DEFAULT_COMPRESSION } from 'zlib';
 
   export default {
     name: 'RepoStars',
@@ -275,6 +274,7 @@ import { Z_DEFAULT_COMPRESSION } from 'zlib';
       display: flex;
       align-items: center;
       width: 400px;
+      max-width: 96%;
       margin: 28px auto 0;
       position: relative;
       .addon {
