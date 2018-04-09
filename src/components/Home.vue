@@ -10,7 +10,7 @@
     <div class="input-group">
       <el-input placeholder="User/Org" v-model="owner" v-if="!requesting" />
       <el-input placeholder="Repo" v-model="repo" v-if="!requesting" />
-      <el-button type="primary" :loading="requesting" @click="fetchRepo" :disabled="!owner || !repo">
+      <el-button type="primary" :loading="requesting" @click="start" :disabled="!owner || !repo">
         {{ !requesting ? 'Start' : `Counting stars (${stargazersCount})`}}
       </el-button>
 
@@ -26,18 +26,28 @@
 <script>
   import moment from 'moment'
   import gql from 'graphql-tag'
+  import AxiosFactory from 'axios'
+  import parseLinkHeader from 'parse-link-header'
+
   import EventBus from '../bus'
 
   const getRandomRepo = () => {
     const repos = [
       // Gratitude to serving the domain name
       ['js-org', 'dns.js.org']
-      
+
       // custom
       // ...
     ]
     return repos[Math.trunc(Math.random() * repos.length)]
   }
+
+  const axios = AxiosFactory.create({
+    baseURL: 'https://api.github.com',
+    headers: {
+      Accept: 'application/vnd.github.v3+json'
+    }
+  })
 
   export default {
     name: 'RepoStars',
@@ -69,7 +79,7 @@
           }
         },
         skip() {
-          return !this.requesting
+          return !this.useGraphQL || !this.requesting
         },
 
         // @see https://github.com/Akryum/vue-apollo/issues/48
@@ -101,7 +111,7 @@
         error({ networkError }) {
           this.requesting = false
           if (+networkError.statusCode > 400) {
-            EventBus.$emit('require:accessToken', this.fetchRepo)
+            EventBus.$emit('require:accessToken', this.start)
           }
         }
       }
@@ -114,6 +124,7 @@
         repo: 'dns.js.org',
         chartData: [],
         requesting: false,
+        useGraphQL: false
       }
     },
     computed: {
@@ -213,10 +224,93 @@
           this.chartData.push(lastData)
         }
       },
-      fetchRepo() {
+      start() {
         this.chartData = []
-        this.afterPointer = null
         this.requesting = true
+
+        // If access token is not present, use APIv3
+        if (!localStorage.getItem('access_token')) {
+          this.v3start()
+        } else {
+          this.v4start()
+        }
+      },
+      // GraphQL API
+      v4start() {
+        this.afterPointer = null
+        this.useGraphQL = true
+      },
+      // REST API
+      v3start() {
+        this.fetchRepo()
+        .then((repo) => {
+          // todo console.log(repo.stargazers_url)
+          this.fetchStargazers()
+        })
+      },
+      fetchRepo(){
+        return axios(`/repos/${this.owner}/${this.repo}`)
+        .then(({ data }) => {
+          // APIv3 cannot fetch more than 400 pages of stargazers
+
+          if (data.stargazers_count > 6000) {
+            this.requesting = false
+            EventBus.$emit('require:accessToken', this.start, {
+              title: 'Warning: Stars > 6,000',
+              body: 'Requests will exceed rate limit - 60req/min'
+            })
+            return Promise.reject()
+          } else {
+            this.chartData = [
+              [data.created_at.substr(0, 10), 0]
+            ]
+          }
+          return data
+        })
+        .catch(({ response: { status, headers } }) => {
+          this.requesting = false
+          if (status > 400) {
+            EventBus.$emit('require:accessToken', this.start, {
+              title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
+              body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
+            })
+          }
+          return Promise.reject()
+        })
+      },
+      fetchStargazers(page = 1) {
+        return axios(`/repos/${this.owner}/${this.repo}/stargazers`, {
+          params: {
+            page,
+            per_page: 100
+          },
+          headers: {
+            Accept: 'application/vnd.github.v3.star+json'
+          }
+        })
+        .then(({ headers, data }) => {
+          const links = parseLinkHeader(headers['link'])
+          if (links && links.next) {
+            this.fetchStargazers(+links.next.page)
+          } else {
+            this.requesting = false
+          }
+          this.$nextTick(() => {
+            this.updateChartData(data.map(star => star.starred_at.substr(0, 10)))
+          })
+          return data
+        })
+        .catch(({ response: { status, headers } }) => {
+          this.requesting = false
+          console.log(headers)
+          if (status > 400) {
+            EventBus.$emit('require:accessToken', this.start, {
+              title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
+              body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
+            })
+          }
+          return Promise.reject()
+        })
       },
       resizeChart() {
         this.$refs.chart.resize()

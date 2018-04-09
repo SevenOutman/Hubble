@@ -14,13 +14,14 @@
     </a>
     <router-view />
     <el-dialog
-      title="Error: Forbidden"
+      :title="dialogTitle || 'Error: Forbidden'"
       :visible.sync="showDialog"
       :modal="false"
       width="400px"
-    >
+    >      
+      <p v-if="dialogBody">{{ dialogBody }}</p>
+      <p v-else>You are not allowed to access the API.</p>
       <p>
-        You are not allowed to access the API.
         You might need to provide an access token.
         Follow <a
         href="https://github.com/settings/tokens/new?scopes=repo&description=Hubble"
@@ -48,6 +49,8 @@
     data() {
       return {
         accessToken: '',
+        dialogTitle: null,
+        dialogBody: null,
         showDialog: false,
         callback: () => {}
       }
@@ -60,8 +63,10 @@
       },
     },
     created() {
-      EventBus.$on('require:accessToken', (callback) => {
+      EventBus.$on('require:accessToken', (callback, { title = null, body = null } = {}) => {
         this.accessToken = ''
+        this.dialogTitle = title
+        this.dialogBody = body
         this.showDialog = true
         this.callback = callback
       })

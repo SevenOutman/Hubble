@@ -8,9 +8,9 @@
     </header>
     <main>
     <div class="input-group">
-      <el-input :value="`Stars ${username} have earned this year`" readonly v-if="!requesting" />
+      <el-input :value="`Stars ${username || 'I'} have earned this year`" readonly v-if="!requesting" />
       <el-button type="primary" :loading="requesting" @click="start">
-        {{ !requesting ? `${stargazersCount}` : `Counting stars (${stargazersCount})`}}
+        {{ !requesting ? `${username ? stargazersCount : 'Start'}` : `Counting stars (${stargazersCount})`}}
       </el-button>
     </div>
     <chart :options="chartOptions" ref="chart"></chart>
@@ -59,7 +59,7 @@
           }
         },
         skip() {
-          return !this.requesting
+          return !this.useGraphQL || !this.requesting
         },
         // @see https://github.com/Akryum/vue-apollo/issues/48
         manual: true,
@@ -109,7 +109,7 @@
           }
         },
         skip() {
-          return !this.requesting || !this.username || !this.repo
+          return !this.useGraphQL || !this.requesting || !this.username || !this.repo
         },
         manual: true,
         result({ data, loading }) {
@@ -148,13 +148,14 @@
     },
     data() {
       return {
-        username: 'I',
+        username: '',
         repo: '',
         reposWithStars: [],
         beforePointer: null,
         afterPointer: null,
         chartData: [],
-        requesting: true,
+        requesting: false,
+        useGraphQL: false
       }
     },
     computed: {
@@ -219,6 +220,24 @@
         this.reposWithStars = []
         this.chartData = []
         this.requesting = true
+
+        if(!localStorage.getItem('access_token')) {
+          this.requesting = false
+          EventBus.$emit('require:accessToken', this.start, {
+            title: 'Tell Hubble who you are',
+            body: 'Hubble recognize you by your access token'
+          })
+        } else {
+          this.v4start()
+        }
+      },
+      v3start() {
+        
+      },
+      v4start() {
+        this.beforePointer = null
+        this.afterPointer = null
+        this.useGraphQL = true
       },
       resizeChart() {
         this.$refs.chart.resize()
@@ -226,6 +245,7 @@
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
+      this.start()
     },
     beforeDestroy() {
       window.removeEventListener('resize', this.resizeChart)
