@@ -8,6 +8,10 @@
 
 I want to know how many stars I've earned this year.
 
+## Let me know
+
+The initial repo to query is [js-org/dns.js.org](https://github.com/js-org/dns.js.org) by default, as my gratitude to its domain name service. Besides, a random repo from a preset repo list may also be chosen as the initial repo. If your project has over 1k stars and wants to join the list, [Let me know](https://github.com/SevenOutman/Hubble/issues/2)!
+
 ## FAQ
 
 ### Access Token
