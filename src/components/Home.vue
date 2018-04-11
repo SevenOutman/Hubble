@@ -7,14 +7,14 @@
       <h2>Travel through GitHub Stars' history</h2>
     </header>
     <main>
-    <div class="input-group">
+    <div class="input-group el-form-item" :class="{'is-error': errorMessage}">
       <el-input placeholder="User/Org" v-model="owner" v-if="!requesting" />
       <el-input placeholder="Repo" v-model="repo" v-if="!requesting" />
       <el-button type="primary" :loading="requesting" @click="start" :disabled="!owner || !repo">
         {{ !requesting ? 'Start' : `Counting stars (${stargazersCount})`}}
       </el-button>
-
     </div>
+    <span>{{ errorMessage}}</span>
     <chart :options="chartOptions" ref="chart"></chart>
     </main>
     <footer align="center">
@@ -108,9 +108,13 @@
           }
         },
 
-        error({ networkError }) {
+        error({ graphQLErrors, networkError }) {
           this.requesting = false
-          if (+networkError.statusCode > 400) {
+
+          console.log(graphQLErrors)
+          if (graphQLErrors && graphQLErrors[0].type === 'NOT_FOUND') {
+            this.errorMessage = graphQLErrors[0].message
+          } else if (+networkError.statusCode > 400) {
             EventBus.$emit('require:accessToken', this.start)
           }
         }
@@ -124,7 +128,8 @@
         repo: 'dns.js.org',
         chartData: [],
         requesting: false,
-        useGraphQL: false
+        useGraphQL: false,
+        errorMessage: ''
       }
     },
     computed: {
@@ -225,6 +230,7 @@
         }
       },
       start() {
+        this.errorMessage = ''
         this.chartData = []
         this.requesting = true
 
@@ -267,9 +273,11 @@
           }
           return data
         })
-        .catch(({ response: { status, headers } }) => {
+        .catch(({ response: { status, headers, data } }) => {
           this.requesting = false
-          if (status > 400) {
+          if (status === 404) {
+            this.errorMessage = data.message
+          } else if (status > 400) {
             EventBus.$emit('require:accessToken', this.start, {
               title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
               body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
@@ -302,7 +310,6 @@
         })
         .catch(({ response: { status, headers } }) => {
           this.requesting = false
-          console.log(headers)
           if (status > 400) {
             EventBus.$emit('require:accessToken', this.start, {
               title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
@@ -391,7 +398,15 @@
       width: 400px;
       max-width: 96%;
       margin: 28px auto 0;
+
+      flex-shrink: 0;
       position: relative;
+      & + span {
+        color: #f56c6c;
+        font-size: 12px;
+        line-height: 1;
+        padding-top: 4px;
+      }
       .addon {
         position: absolute;
         left: 100%;
