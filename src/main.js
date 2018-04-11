@@ -1,16 +1,11 @@
 // The Vue build version to load with the `import` command
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import Vue from 'vue'
-import ElementUI from 'element-ui'
-import 'element-ui/lib/theme-chalk/index.css'
-import ECharts from 'vue-echarts/components/ECharts'
-import 'echarts/lib/chart/line'
-import 'echarts/lib/chart/bar'
-import 'echarts/lib/component/tooltip'
-import 'echarts/lib/component/markPoint'
+import ElementUI from './lib/ElementUI'
+import ECharts from './lib/ECharts'
+import provide from './graphql/apollo'
 import App from './App'
 import router from './router'
-import provide from './graphql/apollo'
 
 Vue.use(ElementUI)
 Vue.component('chart', ECharts)
