@@ -7,15 +7,15 @@
       <h2>Travel through GitHub Stars' history</h2>
     </header>
     <main>
-    <div class="input-group el-form-item" :class="{'is-error': errorMessage}">
-      <el-input placeholder="User/Org" v-model="owner" v-if="!requesting" />
-      <el-input placeholder="Repo" v-model="repo" v-if="!requesting" />
-      <el-button type="primary" :loading="requesting" @click="start" :disabled="!owner || !repo">
-        {{ !requesting ? 'Start' : `Counting stars (${stargazersCount})`}}
-      </el-button>
-    </div>
-    <span>{{ errorMessage}}</span>
-    <chart :options="chartOptions" ref="chart"></chart>
+      <div class="input-group el-form-item" :class="{'is-error': errorMessage}">
+        <el-input placeholder="User/Org" v-model="owner" v-if="!requesting" @keydown.enter.native="start" />
+        <el-input placeholder="Repo" v-model="repo" v-if="!requesting" @keydown.enter.native="start" />
+        <el-button type="primary" :loading="requesting" @click.native="start" :disabled="!owner || !repo">
+          {{ !requesting ? 'Start' : `Counting stars (${stargazersCount})`}}
+        </el-button>
+      </div>
+      <span>{{ errorMessage}}</span>
+      <chart :options="chartOptions" ref="chart"></chart>
     </main>
     <footer align="center">
       <router-link to="/my-stars-this-year">How many stars have I earned this year?</router-link>
@@ -171,8 +171,8 @@
                 type: 'dashed',
               },
             },
-            max (value) {
-              return (Math.floor(value.max/ 100) + 1) * 100
+            max(value) {
+              return (Math.floor(value.max / 100) + 1) * 100
             }
           },
           series: [{
@@ -249,42 +249,42 @@
       // REST API
       v3start() {
         this.fetchRepo()
-        .then((repo) => {
-          // todo console.log(repo.stargazers_url)
-          this.fetchStargazers()
-        })
+          .then((repo) => {
+            // todo console.log(repo.stargazers_url)
+            this.fetchStargazers()
+          })
       },
-      fetchRepo(){
+      fetchRepo() {
         return axios(`/repos/${this.owner}/${this.repo}`)
-        .then(({ data }) => {
-          // APIv3 cannot fetch more than 400 pages of stargazers
+          .then(({ data }) => {
+            // APIv3 cannot fetch more than 400 pages of stargazers
 
-          if (data.stargazers_count > 6000) {
+            if (data.stargazers_count > 6000) {
+              this.requesting = false
+              EventBus.$emit('require:accessToken', this.start, {
+                title: 'Warning: Stars > 6,000',
+                body: 'Requests will exceed rate limit - 60req/min'
+              })
+              return Promise.reject()
+            } else {
+              this.chartData = [
+                [data.created_at.substr(0, 10), 0]
+              ]
+            }
+            return data
+          })
+          .catch(({ response: { status, headers, data } }) => {
             this.requesting = false
-            EventBus.$emit('require:accessToken', this.start, {
-              title: 'Warning: Stars > 6,000',
-              body: 'Requests will exceed rate limit - 60req/min'
-            })
+            if (status === 404) {
+              this.errorMessage = data.message
+            } else if (status > 400) {
+              EventBus.$emit('require:accessToken', this.start, {
+                title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
+                body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
+              })
+            }
             return Promise.reject()
-          } else {
-            this.chartData = [
-              [data.created_at.substr(0, 10), 0]
-            ]
-          }
-          return data
-        })
-        .catch(({ response: { status, headers, data } }) => {
-          this.requesting = false
-          if (status === 404) {
-            this.errorMessage = data.message
-          } else if (status > 400) {
-            EventBus.$emit('require:accessToken', this.start, {
-              title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
-              body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
-            })
-          }
-          return Promise.reject()
-        })
+          })
       },
       fetchStargazers(page = 1) {
         return axios(`/repos/${this.owner}/${this.repo}/stargazers`, {
@@ -296,28 +296,28 @@
             Accept: 'application/vnd.github.v3.star+json'
           }
         })
-        .then(({ headers, data }) => {
-          const links = parseLinkHeader(headers['link'])
-          if (links && links.next) {
-            this.fetchStargazers(+links.next.page)
-          } else {
-            this.requesting = false
-          }
-          this.$nextTick(() => {
-            this.updateChartData(data.map(star => star.starred_at.substr(0, 10)))
-          })
-          return data
-        })
-        .catch(({ response: { status, headers } }) => {
-          this.requesting = false
-          if (status > 400) {
-            EventBus.$emit('require:accessToken', this.start, {
-              title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
-              body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
+          .then(({ headers, data }) => {
+            const links = parseLinkHeader(headers['link'])
+            if (links && links.next) {
+              this.fetchStargazers(+links.next.page)
+            } else {
+              this.requesting = false
+            }
+            this.$nextTick(() => {
+              this.updateChartData(data.map(star => star.starred_at.substr(0, 10)))
             })
-          }
-          return Promise.reject()
-        })
+            return data
+          })
+          .catch(({ response: { status, headers } }) => {
+            this.requesting = false
+            if (status > 400) {
+              EventBus.$emit('require:accessToken', this.start, {
+                title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
+                body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
+              })
+            }
+            return Promise.reject()
+          })
       },
       resizeChart() {
         this.$refs.chart.resize()
@@ -329,7 +329,7 @@
         this.owner = owner
         this.repo = repo
       } else {
-        const [ randomOwner, randomRepo ] = getRandomRepo()
+        const [randomOwner, randomRepo] = getRandomRepo()
         this.owner = randomOwner
         this.repo = randomRepo
       }
@@ -391,53 +391,53 @@
 
       display: flex;
       flex-direction: column;
-    align-items: center;
-    .input-group {
-      display: flex;
       align-items: center;
-      width: 400px;
-      max-width: 96%;
-      margin: 28px auto 0;
+      .input-group {
+        display: flex;
+        align-items: center;
+        width: 400px;
+        max-width: 96%;
+        margin: 28px auto 0;
 
-      flex-shrink: 0;
-      position: relative;
-      & + span {
-        color: #f56c6c;
-        font-size: 12px;
-        line-height: 1;
-        padding-top: 4px;
-      }
-      .addon {
-        position: absolute;
-        left: 100%;
-        margin-left: 1em;
-        white-space: nowrap;
-      }
-      .el-input {
-        flex-grow: 1;
-        & > input {
-          border-top-right-radius: 0;
-          border-bottom-right-radius: 0;
+        flex-shrink: 0;
+        position: relative;
+        & + span {
+          color: #f56c6c;
+          font-size: 12px;
+          line-height: 1;
+          padding-top: 4px;
         }
-        & + * {
-          margin-left: -1px;
-          &, & > input {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
+        .addon {
+          position: absolute;
+          left: 100%;
+          margin-left: 1em;
+          white-space: nowrap;
+        }
+        .el-input {
+          flex-grow: 1;
+          & > input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+          }
+          & + * {
+            margin-left: -1px;
+            &, & > input {
+              border-top-left-radius: 0;
+              border-bottom-left-radius: 0;
+            }
           }
         }
+        .el-button {
+          flex-grow: 1;
+          flex-shrink: 1;
+        }
       }
-      .el-button {
-        flex-grow: 1;
-        flex-shrink: 1;
-      }
-    }
 
-    .echarts {
-      flex-grow: 1;
-      width: 100%;
-      height: auto;
-    }
+      .echarts {
+        flex-grow: 1;
+        width: 100%;
+        height: auto;
+      }
     }
   }
 </style>
