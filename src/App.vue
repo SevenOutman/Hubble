@@ -18,7 +18,7 @@
       :visible.sync="showDialog"
       :modal="false"
       width="400px"
-    >      
+    >
       <p v-if="dialogBody">{{ dialogBody }}</p>
       <p v-else>You are not allowed to access the API.</p>
       <p>
@@ -33,6 +33,7 @@
         </el-input>
         <el-button @click="saveAccessToken">Save</el-button>
       </div>
+      <el-button @click="requireOAuth">Login with GitHub</el-button>
       <a
         href="https://github.com/SevenOutman/Hubble#access-token"
         target="_blank"
@@ -42,6 +43,7 @@
 </template>
 
 <script>
+  import Authenticator from 'netlify-auth-providers'
   import EventBus from './bus'
 
   export default {
@@ -52,7 +54,8 @@
         dialogTitle: null,
         dialogBody: null,
         showDialog: false,
-        callback: () => {}
+        callback: () => {
+        }
       }
     },
     methods: {
@@ -61,6 +64,18 @@
         this.showDialog = false
         this.callback(this.accessToken)
       },
+      requireOAuth() {
+        new Authenticator({ site_id: 'hubble.netlify.com'}).authenticate({ provider: 'github', scope: 'user' }, (err, data) => {
+          if (err) {
+            console.log(err)
+            return
+          }
+          console.log(data)
+
+          this.accessToken = data.token
+          this.saveAccessToken()
+        })
+      }
     },
     created() {
       EventBus.$on('require:accessToken', (callback, { title = null, body = null } = {}) => {
@@ -96,63 +111,63 @@
     .el-dialog {
       text-align: center;
       .input-group {
-      display: flex;
-      align-items: center;
-      width: 400px;
-      margin: 28px auto 0;
-      position: relative;
-      .addon {
-        position: absolute;
-        left: 100%;
-        margin-left: 1em;
-        white-space: nowrap;
-      }
-      .el-input {
-        flex-grow: 1;
-        & > input {
-          border-top-right-radius: 0;
-          border-bottom-right-radius: 0;
+        display: flex;
+        align-items: center;
+        width: 400px;
+        margin: 28px auto 0;
+        position: relative;
+        .addon {
+          position: absolute;
+          left: 100%;
+          margin-left: 1em;
+          white-space: nowrap;
         }
-        & + * {
-          margin-left: -1px;
-          &, & > input {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
+        .el-input {
+          flex-grow: 1;
+          & > input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+          }
+          & + * {
+            margin-left: -1px;
+            &, & > input {
+              border-top-left-radius: 0;
+              border-bottom-left-radius: 0;
+            }
           }
         }
+        .el-button {
+          flex-grow: 1;
+          flex-shrink: 1;
+        }
       }
-      .el-button {
-        flex-grow: 1;
-        flex-shrink: 1;
-      }
-    }
 
     }
 
-  .github-corner:hover .octo-arm {
-    animation: octocat-wave 560ms ease-in-out
-  }
-
-  @keyframes octocat-wave {
-    0%, 100% {
-      transform: rotate(0deg)
-    }
-    20%, 60% {
-      transform: rotate(-25deg)
-    }
-    40%, 80% {
-      transform: rotate(10deg)
-    }
-  }
-
-  @media (max-width: 500px) {
     .github-corner:hover .octo-arm {
-      animation: none
-    }
-
-    .github-corner .octo-arm {
       animation: octocat-wave 560ms ease-in-out
     }
-  }
+
+    @keyframes octocat-wave {
+      0%, 100% {
+        transform: rotate(0deg)
+      }
+      20%, 60% {
+        transform: rotate(-25deg)
+      }
+      40%, 80% {
+        transform: rotate(10deg)
+      }
+    }
+
+    @media (max-width: 500px) {
+      .github-corner:hover .octo-arm {
+        animation: none
+      }
+
+      .github-corner .octo-arm {
+        animation: octocat-wave 560ms ease-in-out
+      }
+    }
   }
 </style>

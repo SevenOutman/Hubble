@@ -21,6 +21,7 @@
     "graphql": "^0.13.2",
     "graphql-tag": "^2.8.0",
     "moment": "^2.22.0",
+    "netlify-auth-providers": "^1.0.0-alpha5",
     "parse-link-header": "^1.0.1",
     "vue": "^2.5.2",
     "vue-apollo": "^3.0.0-beta.5",
