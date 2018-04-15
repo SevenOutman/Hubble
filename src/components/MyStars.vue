@@ -8,7 +8,7 @@
     </header>
     <main>
       <div class="input-group">
-        <el-input :value="`Stars ${viewer || 'I'} have earned this year`" readonly v-if="!requesting" />
+        <el-input :value="`Stars ${viewer ? `${viewer} has` : 'I have'} earned this year`" readonly v-if="!requesting" />
         <el-button type="primary" :loading="requesting" @click="start">
           {{ !requesting ? `${viewer ? stargazersCount : 'Start'}` : `Counting stars (${stargazersCount})`}}
         </el-button>
