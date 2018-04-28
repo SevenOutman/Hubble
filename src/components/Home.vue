@@ -34,10 +34,10 @@
   const getRandomRepo = () => {
     const repos = [
       // Gratitude to serving the domain name
-      ['js-org', 'dns.js.org']
+      ['js-org', 'dns.js.org'],
 
       // custom
-      // ...
+      ['rsuite', 'rsuite']
     ]
     return repos[Math.trunc(Math.random() * repos.length)]
   }
