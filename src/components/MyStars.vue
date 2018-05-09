@@ -22,7 +22,6 @@
 </template>
 
 <script>
-  import moment from 'moment'
   import gql from 'graphql-tag'
 
   import EventBus from '../bus'
