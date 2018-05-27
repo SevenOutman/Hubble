@@ -336,6 +336,10 @@
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
+
+      if (this.$route.query.start !== undefined) {
+        this.start()
+      }
     },
     beforeDestroy() {
       window.removeEventListener('resize', this.resizeChart)
