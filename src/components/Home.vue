@@ -15,11 +15,35 @@
         </el-button>
       </div>
       <span>{{ errorMessage}}</span>
-      <chart :options="chartOptions" ref="chart"></chart>
+      <div class="chart-place">
+        <chart :options="chartOptions" ref="chart"></chart>
+        <div class="buttons">
+          <el-button round icon="el-icon-share" v-show="showShareButton" @click="showShareDialog = true">Share
+          </el-button>
+        </div>
+      </div>
     </main>
     <footer align="center">
       <router-link to="/my-stars-this-year">How many stars have I earned this year?</router-link>
     </footer>
+    <el-dialog
+      title="Get your Hubble badge"
+      :visible.sync="showShareDialog"
+      :modal="false"
+      width="400px"
+    >
+      <el-form label-position="left" label-width="80px">
+        <el-form-item label="Badge" style="text-align: start">
+          <img :src="badgeImgLink" alt="Hubble" style="vertical-align: middle">
+        </el-form-item>
+        <el-form-item label="Markdown">
+          <el-input v-model="shareMarkdown" readonly></el-input>
+        </el-form-item>
+        <el-form-item label="HTML">
+          <el-input v-model="shareHTML" readonly></el-input>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
 
@@ -37,7 +61,7 @@
       ['js-org', 'js.org'],
 
       // custom
-      ['rsuite', 'rsuite']
+      ['rsuite', 'rsuite'],
     ]
     return repos[Math.trunc(Math.random() * repos.length)]
   }
@@ -45,8 +69,8 @@
   const axios = AxiosFactory.create({
     baseURL: 'https://api.github.com',
     headers: {
-      Accept: 'application/vnd.github.v3+json'
-    }
+      Accept: 'application/vnd.github.v3+json',
+    },
   })
 
   export default {
@@ -75,7 +99,7 @@
           return {
             owner: this.owner,
             name: this.repo,
-            afterPointer: this.afterPointer
+            afterPointer: this.afterPointer,
           }
         },
         skip() {
@@ -87,10 +111,11 @@
         result({ data, loading }) {
           if (!loading) {
             const { createdAt, stargazers: { edges, pageInfo: { endCursor, hasPreviousPage, hasNextPage }, totalCount } } = data.repository
+            this.since = createdAt.substr(0, 4)
 
             if (!hasPreviousPage && edges.length) {
               this.chartData = [
-                [createdAt.substr(0, 10), 0]
+                [createdAt.substr(0, 10), 0],
               ]
             }
 
@@ -117,22 +142,38 @@
           } else if (+networkError.statusCode > 400) {
             EventBus.$emit('require:accessToken', this.start)
           }
-        }
-      }
+        },
+      },
     },
     data() {
       return {
         repository: '',
         afterPointer: null,
         owner: 'js-org',
-        repo: 'dns.js.org',
+        repo: 'js.org',
+        since: '',
         chartData: [],
         requesting: false,
         useGraphQL: false,
-        errorMessage: ''
+        errorMessage: '',
+        showShareButton: false,
+        showShareDialog: false,
       }
     },
     computed: {
+      badgeImgLink() {
+        return `https://img.shields.io/badge/since-${this.since}-409eff.svg?style=flat-square`
+      },
+      shareLink() {
+        return `https://hubble.js.org/#/owner=${this.owner}&repo=${this.repo}&start`
+      },
+      shareMarkdown() {
+        return `[![Hubble](${this.badgeImgLink})](${this.shareLink})`
+      },
+      shareHTML() {
+        return `<a href="${this.shareLink}"><img src="${this.badgeImgLink}" alt="Hubble"></a>`
+      },
+
       stargazersCount() {
         if (!this.chartData.length) {
           return 0
@@ -173,7 +214,7 @@
             },
             max(value) {
               return (Math.floor(value.max / 100) + 1) * 100
-            }
+            },
           },
           series: [{
             type: 'line',
@@ -186,8 +227,8 @@
             },
             markPoint: {
               data: [{
-                type: 'max'
-              }]
+                type: 'max',
+              }],
             },
             data: this.chartData,
           }],
@@ -218,7 +259,7 @@
 
               lastData = [
                 moment(lastData[0]).add(1, 'day').format('YYYY-MM-DD'),
-                lastData[1]
+                lastData[1],
               ]
             }
             lastData[1]++
@@ -230,6 +271,7 @@
         }
       },
       start() {
+        this.since = ''
         this.errorMessage = ''
         this.chartData = []
         this.requesting = true
@@ -258,17 +300,17 @@
         return axios(`/repos/${this.owner}/${this.repo}`)
           .then(({ data }) => {
             // APIv3 cannot fetch more than 400 pages of stargazers
-
+            this.since = data.created_at.substr(0, 4)
             if (data.stargazers_count > 6000) {
               this.requesting = false
               EventBus.$emit('require:accessToken', this.start, {
                 title: 'Warning: Stars > 6,000',
-                body: 'Requests will exceed rate limit - 60req/min'
+                body: 'Requests will exceed rate limit - 60req/min',
               })
               return Promise.reject()
             } else {
               this.chartData = [
-                [data.created_at.substr(0, 10), 0]
+                [data.created_at.substr(0, 10), 0],
               ]
             }
             return data
@@ -280,7 +322,7 @@
             } else if (status > 400) {
               EventBus.$emit('require:accessToken', this.start, {
                 title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
-                body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
+                body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null,
               })
             }
             return Promise.reject()
@@ -290,11 +332,11 @@
         return axios(`/repos/${this.owner}/${this.repo}/stargazers`, {
           params: {
             page,
-            per_page: 100
+            per_page: 100,
           },
           headers: {
-            Accept: 'application/vnd.github.v3.star+json'
-          }
+            Accept: 'application/vnd.github.v3.star+json',
+          },
         })
           .then(({ headers, data }) => {
             const links = parseLinkHeader(headers['link'])
@@ -313,7 +355,7 @@
             if (status > 400) {
               EventBus.$emit('require:accessToken', this.start, {
                 title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
-                body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null
+                body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null,
               })
             }
             return Promise.reject()
@@ -322,6 +364,16 @@
       resizeChart() {
         this.$refs.chart.resize()
       },
+    },
+    watch: {
+      requesting(val) {
+        this.showShareButton = !val
+      },
+      badgeImgLink(val) {
+        // preload
+        const image = new Image()
+        image.src = val
+      }
     },
     created() {
       const { owner = '', repo = '' } = this.$route.query
@@ -343,7 +395,7 @@
     },
     beforeDestroy() {
       window.removeEventListener('resize', this.resizeChart)
-    }
+    },
   }
 </script>
 
@@ -436,11 +488,23 @@
           flex-shrink: 1;
         }
       }
-
-      .echarts {
+      .chart-place {
         flex-grow: 1;
         width: 100%;
-        height: auto;
+        display: flex;
+        flex-direction: column;
+
+        .echarts {
+          width: 100%;
+          flex-grow: 1;
+        }
+
+        .buttons {
+          flex-shrink: 0;
+          height: 40px;
+          width: 100%;
+          text-align: center;
+        }
       }
     }
   }
