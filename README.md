@@ -1,4 +1,4 @@
-![Screenshot](https://i.loli.net/2018/04/06/5ac6740996ec9.png)
+![Screenshot](https://i.loli.net/2018/05/29/5b0d1c3190a01.png)
 
 ### Features
 - Reveal a repository's star history.
@@ -10,7 +10,7 @@ I want to know how many stars I've earned this year.
 
 ## Let me know
 
-The initial repo to query is [js-org/dns.js.org](https://github.com/js-org/dns.js.org) by default, as my gratitude to its domain name service. Besides, a random repo from a preset repo list may also be chosen as the initial repo. If your project has over 1k stars and wants to join the list, [Let me know](https://github.com/SevenOutman/Hubble/issues/2)!
+The initial repo to query is [js-org/js.org](https://github.com/js-org/js.org) by default, as my gratitude to its domain name service. Besides, a random repo from a preset repo list may also be chosen as the initial repo. If your project has over 1k stars and wants to join the list, [Let me know](https://github.com/SevenOutman/Hubble/issues/2)!
 
 ## FAQ
 
