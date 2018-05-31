@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <el-alert type="warning" title=""><b>React vs. Vue 100k<i class="el-icon-star-on"></i> race is <router-link to="/react-vs-vue">LIVE</router-link></b></el-alert>
+    <el-alert type="warning" title=""><b>React vs. Vue 100k<i class="el-icon-star-on"></i> race is <router-link to="/react-vs-vue">LIVE</router-link> now.</b></el-alert>
     <router-view class="router-view" />
     <el-dialog
       :title="dialogTitle || 'Error: Forbidden'"
