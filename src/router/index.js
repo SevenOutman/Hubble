@@ -8,7 +8,7 @@ import ReactVsVue from '@/components/ReactVsVue'
 
 Vue.use(Router)
 
-export default new Router({
+const router = new Router({
   routes: [
     {
       path: '',
@@ -28,9 +28,22 @@ export default new Router({
         },
         {
           path: '/react-vs-vue',
-          component: ReactVsVue
+          component: ReactVsVue,
+          meta: {
+            title: 'React vs. Vue'
+          }
         }
       ]
     },
   ]
 })
+
+router.beforeEach((to, from, next) => {
+  if (to.meta && to.meta.title) {
+    document.title = `${to.meta.title} · Hubble`
+  } else {
+    document.title = 'Hubble'
+  }
+  next()
+})
+export default router
