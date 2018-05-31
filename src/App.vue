@@ -103,6 +103,7 @@
     padding: 0;
   }
 
+  a,
   a:visited {
     color: inherit;
   }

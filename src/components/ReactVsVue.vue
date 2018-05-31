@@ -82,7 +82,8 @@
 
         timeout: {
           react: null,
-          vue: null
+          vue: null,
+          line: null
         }
       }
     },
@@ -231,10 +232,10 @@
           series: [{
             name: 'React',
             type: 'line',
+            showSymbol: false,
             lineStyle: {
               color: '#61dafb'
             },
-            showSymbol: false,
             itemStyle: {
               color: '#61dafb'
             },
@@ -247,10 +248,10 @@
           }, {
             name: 'Vue',
             type: 'line',
+            showSymbol: false,
             lineStyle: {
               color: '#41b883',
             },
-            showSymbol: false,
             itemStyle: {
               color: '#41b883',
             },
@@ -272,6 +273,34 @@
         } else {
           this.v4start()
         }
+        this.pushLineData()
+      },
+      pushLineData() {
+        const now = Math.trunc(Date.now() / 1000) * 1000
+        if (this.vueCount && this.reactCount) {
+          if (this.reactLineData.length) {
+            this.reactLineData.push([now, this.reactCount])
+          } else {
+            for (let i = 299; i >= 0; i--) {
+              this.reactLineData.push([now - i * 1000, this.reactCount])
+            }
+          }
+          while (this.reactLineData.length > 300){
+            this.reactLineData.shift()
+          }
+
+          if (this.vueLineData.length) {
+            this.vueLineData.push([now, this.vueCount])
+          } else {
+            for (let i = 299; i >= 0; i--) {
+              this.vueLineData.push([now - i* 1000, this.vueCount])
+            }
+          }
+          while (this.vueLineData.length > 300){
+            this.vueLineData.shift()
+          }
+        }
+        this.timeout.line = setTimeout(this.pushLineData, 1000)
       },
       // GraphQL API
       v4start() {
@@ -286,7 +315,6 @@
       fetchReactCount() {
         fetchStargazerCount('facebook/react').then((count) => {
           this.reactCount = count
-          this.reactLineData.push([Date.now(), count])
           this.timeout.react = setTimeout(this.fetchReactCount, 3000)
         }, ({ response: { status, headers, data } }) => {
           if (status === 404) {
@@ -302,8 +330,6 @@
       fetchVueCount() {
         fetchStargazerCount('vuejs/vue').then((count) => {
           this.vueCount = count
-          this.vueLineData.push([Date.now(), count])
-
           this.timeout.vue = setTimeout(this.fetchVueCount, 3000)
         }, ({ response: { status, headers, data } }) => {
           if (status === 404) {
@@ -319,8 +345,6 @@
       graphqlFetchReactCount() {
         graphqlFetchStargazerCount('facebook', 'react').then((count) => {
           this.reactCount = count
-          this.reactLineData.push([Date.now(), count])
-
           this.timeout.react = setTimeout(this.graphqlFetchReactCount, 3000)
         }, ([{ type }]) => {
           if (type === 'RATE_LIMITED') {
@@ -334,8 +358,6 @@
       graphqlFetchVueCount() {
         graphqlFetchStargazerCount('vuejs', 'vue').then((count) => {
           this.vueCount = count
-          this.vueLineData.push([Date.now(), count])
-
           this.timeout.vue = setTimeout(this.graphqlFetchVueCount, 3000)
         }, ([{ type }]) => {
           if (type === 'RATE_LIMITED') {
@@ -358,6 +380,7 @@
       window.removeEventListener('resize', this.resizeChart)
       clearTimeout(this.timeout.react)
       clearTimeout(this.timeout.vue)
+      clearTimeout(this.timeout.line)
     },
   }
 </script>
