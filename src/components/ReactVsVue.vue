@@ -176,9 +176,9 @@
             type: 'bar',
             showSymbol: false,
             label: {
-              show: window.innerWidth >= 980,
+              show: true,
               formatter: params => `{h1|${params.name}}\n{h2|${`${params.value}`.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}}`,
-              rich: {
+              rich: window.innerWidth >= 980 ? {
                 h1: {
                   fontSize: 72,
                   fontWeight: 'bold',
@@ -191,7 +191,20 @@
                   color: '#ffffff',
                   align: 'center'
                 }
-              }
+              } : {
+                h1: {
+                  fontSize: 24,
+                  fontWeight: 'bold',
+                  color: '#ffffff',
+                  align: 'center'
+                },
+                h2: {
+                  fontSize: 24,
+                  fontWeight: 'bold',
+                  color: '#ffffff',
+                  align: 'center'
+                }
+              },
             },
             barMaxWidth: 300,
             itemStyle: {
