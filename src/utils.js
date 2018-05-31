@@ -96,8 +96,17 @@ export function graphqlFetchStargazers(owner, name, {
 }
 
 export function fetchStargazerCount(fullname) {
-  return axios(`/repos/${fullname}`)
-    .then(({ data: { stargazers_count } }) => stargazers_count)
+  const headers = {
+    Accept: 'application/vnd.github.v3+json',
+  }
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    headers.Authorization = `token ${token}`
+  }
+  return axios(`/repos/${fullname}`, {
+    baseURL: 'https://api.github.com',
+    headers
+  }).then(({ data: { stargazers_count } }) => stargazers_count)
 }
 
 export function graphqlFetchStargazerCount(owner, name) {
