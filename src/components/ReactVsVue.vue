@@ -7,7 +7,20 @@
       <h2>Travel through GitHub Stars' history</h2>
     </header>
     <main>
-      <h2>100k<i class="el-icon-star-on"></i> race, React vs. Vue</h2>
+      <h2 style="margin:.5em 0">100k<i class="el-icon-star-on"></i> race, React vs. Vue</h2>
+      <el-row style="width: 100%">
+        <el-col :md="12" :xs="24" style="color:#61dafb">
+          <div v-if="reactLast">
+            React's latest star: {{ reactLast.starredAt | datetime }} by {{ reactLast.node.login }}
+          </div>
+        </el-col>
+
+        <el-col :md="12" :xs="24" style="color:#41b883">
+          <div v-if="vueLast">
+            Vue's latest star: {{ vueLast.starredAt }} by {{ vueLast.node.login }}
+          </div>
+        </el-col>
+      </el-row>
       <div class="chart-place">
         <chart :options="chartOptions" ref="chart"></chart>
         <div class="buttons">
@@ -72,6 +85,8 @@
       return {
         reactCount: 0,
         vueCount: 0,
+        reactLast: null,
+        vueLast: null,
         reactLineData: [],
         vueLineData: [],
         showShareButton: false,
@@ -265,6 +280,13 @@
         }
       },
     },
+    filters: {
+      datetime(isoDate) {
+        const date = new Date(isoDate)
+        const pad0 = n => n < 10 ? `0${n}` : `${n}`
+        return `${date.getFullYear()}-${pad0(date.getMonth() + 1)}-${pad0(date.getDate())} ${pad0(date.getHours())}:${pad0(date.getMinutes())}:${pad0(date.getSeconds())}`
+      }
+    },
     methods: {
       start() {
         // If access token is not present, use APIv3
@@ -285,7 +307,7 @@
               this.reactLineData.push([now - i * 1000, this.reactCount])
             }
           }
-          while (this.reactLineData.length > 300){
+          while (this.reactLineData.length > 300) {
             this.reactLineData.shift()
           }
 
@@ -293,10 +315,10 @@
             this.vueLineData.push([now, this.vueCount])
           } else {
             for (let i = 299; i >= 0; i--) {
-              this.vueLineData.push([now - i* 1000, this.vueCount])
+              this.vueLineData.push([now - i * 1000, this.vueCount])
             }
           }
-          while (this.vueLineData.length > 300){
+          while (this.vueLineData.length > 300) {
             this.vueLineData.shift()
           }
         }
@@ -343,9 +365,10 @@
         })
       },
       graphqlFetchReactCount() {
-        graphqlFetchStargazerCount('facebook', 'react').then((count) => {
-          this.reactCount = count
+        graphqlFetchStargazerCount('facebook', 'react').then(({ total, last }) => {
+          this.reactCount = total
           this.timeout.react = setTimeout(this.graphqlFetchReactCount, 3000)
+          this.reactLast = last
         }, ([{ type }]) => {
           if (type === 'RATE_LIMITED') {
             EventBus.$emit('require:accessToken', this.start, {
@@ -356,9 +379,10 @@
         })
       },
       graphqlFetchVueCount() {
-        graphqlFetchStargazerCount('vuejs', 'vue').then((count) => {
-          this.vueCount = count
+        graphqlFetchStargazerCount('vuejs', 'vue').then(({ total, last }) => {
+          this.vueCount = total
           this.timeout.vue = setTimeout(this.graphqlFetchVueCount, 3000)
+          this.vueLast = last
         }, ([{ type }]) => {
           if (type === 'RATE_LIMITED') {
             EventBus.$emit('require:accessToken', this.start, {

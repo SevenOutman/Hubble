@@ -104,7 +104,13 @@ export function graphqlFetchStargazerCount(owner, name) {
   const query = `
   query Repo($owner: String!, $name: String!) {
     repository(owner: $owner, name: $name) {
-      stargazers {
+      stargazers(last: 1) {
+        edges {
+          starredAt
+          node {
+            login
+          }
+        }
         totalCount
       }
     }
@@ -123,8 +129,8 @@ export function graphqlFetchStargazerCount(owner, name) {
     if (errors) {
       return Promise.reject(errors)
     }
-    const { repository: { stargazers: { totalCount } } } = data
-    return totalCount
+    const { repository: { stargazers: { totalCount, edges } } } = data
+    return { total: totalCount, last: edges[0] }
   })
 
 }
