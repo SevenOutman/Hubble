@@ -416,6 +416,10 @@
         this.$refs.chart.resize()
       },
     },
+    created() {
+      const image = new Image()
+      image.src = this.badgeImgLink
+    },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
       this.start()
