@@ -158,6 +158,7 @@
 
     .el-dialog {
       text-align: center;
+      max-width: 90%;
       .input-group {
         display: flex;
         align-items: center;

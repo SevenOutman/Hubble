@@ -11,14 +11,14 @@
       <el-row style="width: 100%">
         <el-col :md="12" :xs="24" style="color:#61dafb">
           <div v-if="reactLast">
-            React's latest star: {{ reactLast.starredAt | datetime }} by {{ reactLast.node.login }}
+            Latest: {{ reactLast.starredAt | datetime }} by {{ reactLast.node.login }}
           </div>
           <div v-else>&nbsp;</div>
         </el-col>
 
         <el-col :md="12" :xs="24" style="color:#41b883">
           <div v-if="vueLast">
-            Vue's latest star: {{ vueLast.starredAt | datetime }} by {{ vueLast.node.login }}
+            Latest: {{ vueLast.starredAt | datetime }} by {{ vueLast.node.login }}
           </div>
           <div v-else>&nbsp;</div>
         </el-col>
@@ -136,6 +136,8 @@
           grid: {
             top: 12,
             bottom: 0,
+            left: window.innerWidth < 500 ? 12 : '8%',
+            right: window.innerWidth < 500 ? 12 : '8%',
             containLabel: true
           },
           xAxis: {
@@ -213,7 +215,10 @@
             trigger: 'axis',
           },
           grid: {
+            top: 12,
             bottom: 0,
+            left: window.innerWidth < 500 ? 12 : '8%',
+            right: window.innerWidth < 500 ? 12 : '8%',
             containLabel: true
           },
           xAxis: {
@@ -243,7 +248,7 @@
                 type: 'dashed',
               },
             },
-            min: 90000,
+            min: 92000,
             max: 101000
           },
           series: [{
@@ -482,6 +487,12 @@
           width: 48px;
           background-size: contain;
           display: block;
+        }
+      }
+
+      @media screen and (max-width: 500px) {
+        h2 {
+          display: none;
         }
       }
     }
