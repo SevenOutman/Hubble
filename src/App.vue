@@ -95,6 +95,10 @@
     padding: 0;
   }
 
+  a:visited {
+    color: inherit;
+  }
+
   #app {
     font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;

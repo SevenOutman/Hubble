@@ -94,3 +94,37 @@ export function graphqlFetchStargazers(owner, name, {
 
   return fetchStargazersByPage().catch(onError)
 }
+
+export function fetchStargazerCount(fullname) {
+  return axios(`/repos/${fullname}`)
+    .then(({ data: { stargazers_count } }) => stargazers_count)
+}
+
+export function graphqlFetchStargazerCount(owner, name) {
+  const query = `
+  query Repo($owner: String!, $name: String!) {
+    repository(owner: $owner, name: $name) {
+      stargazers {
+        totalCount
+      }
+    }
+  }`
+  return axios(`/graphql`, {
+    baseURL: 'https://api.github.com',
+    method: 'post',
+    data: {
+      query,
+      variables: { owner, name },
+    },
+    headers: {
+      Authorization: `token ${localStorage.getItem('access_token')}`,
+    },
+  }).then(({ data: { errors, data } }) => {
+    if (errors) {
+      return Promise.reject(errors)
+    }
+    const { repository: { stargazers: { totalCount } } } = data
+    return totalCount
+  })
+
+}

@@ -186,6 +186,11 @@
           tooltip: {
             trigger: 'axis',
           },
+          grid: {
+            top: 12,
+            bottom: 5,
+            containLabel: true
+          },
           xAxis: {
             type: 'time',
             axisLine: {

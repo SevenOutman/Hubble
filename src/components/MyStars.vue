@@ -182,6 +182,11 @@
           tooltip: {
             trigger: 'item',
           },
+          grid: {
+            top: 12,
+            bottom: 5,
+            containLabel: true
+          },
           xAxis: {
             type: 'category',
             axisLine: {

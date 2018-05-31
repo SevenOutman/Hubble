@@ -4,6 +4,7 @@ import BasicLayout from '@/components/BasicLayout'
 import Home from '@/components/Home'
 import MyStars from '@/components/MyStars'
 import MultiRepo from '@/components/MultiRepo'
+import ReactVsVue from '@/components/ReactVsVue'
 
 Vue.use(Router)
 
@@ -24,6 +25,10 @@ export default new Router({
         {
           path: '/repo-race',
           component: MultiRepo
+        },
+        {
+          path: '/react-vs-vue',
+          component: ReactVsVue
         }
       ]
     },
