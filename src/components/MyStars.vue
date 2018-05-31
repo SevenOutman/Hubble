@@ -17,6 +17,8 @@
     </main>
     <footer align="center">
       <router-link to="/">Home</router-link>
+      |
+      <router-link to="/repo-race">Repo race</router-link>
     </footer>
   </div>
 </template>
