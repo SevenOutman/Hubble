@@ -7,11 +7,18 @@
       <h2>Travel through GitHub Stars' history</h2>
     </header>
     <main>
-      <h2>100k Star race, React vs. Vue</h2>
+      <h2>100k<i class="el-icon-star-on"></i> race, React vs. Vue</h2>
       <div class="chart-place">
         <chart :options="chartOptions" ref="chart"></chart>
         <div class="buttons">
-          <el-button round icon="el-icon-share" v-show="showShareButton" @click="showShareDialog = true">Share
+          <el-switch
+            v-model="lineChart"
+            active-text="Line chart"
+            inactive-text="Bar chart"
+            style="margin-right: 1em"
+          >
+          </el-switch>
+          <el-button round icon="el-icon-share" @click="showShareDialog = true">Share
           </el-button>
         </div>
       </div>
@@ -59,46 +66,35 @@
     },
   })
 
-  const repoColors = {
-    'vuejs/vue': '#41b883',
-    'facebook/react': '#61dafb',
-  }
-
-  const presetColors = [
-    '#ff4500',
-    '#ff8c00',
-    '#ffd700',
-    '#90ee90',
-    '#00ced1',
-    '#1e90ff',
-    '#c71585',
-    'rgba(255, 69, 0, 0.68)',
-    'rgb(255, 120, 0)',
-    'hsv(51, 100, 98)',
-    'hsva(120, 40, 94, 0.5)',
-    'hsl(181, 100%, 37%)',
-    'hsla(209, 100%, 56%, 0.73)',
-    '#c7158577',
-  ]
-
-  const randomColor = () => presetColors[Math.round(Math.random() * presetColors.length)]
-
   export default {
     name: 'ReactVsVue',
     data() {
-      const defaultColor1 = randomColor()
-      const defaultColor2 = presetColors[(presetColors.indexOf(defaultColor1) + 3) % presetColors.length]
       return {
         reactCount: 0,
         vueCount: 0,
+        reactLineData: [],
+        vueLineData: [],
         showShareButton: false,
         showShareDialog: false,
 
         chartType: 'bar',
-        errorMessage: ''
+        errorMessage: '',
+
+        timeout: {
+          react: null,
+          vue: null
+        }
       }
     },
     computed: {
+      lineChart: {
+        get() {
+          return this.chartType === 'line'
+        },
+        set(val) {
+          this.chartType = val ? 'line' : 'bar'
+        }
+      },
       badgeImgLink() {
         return `https://img.shields.io/badge/Hubble-React%20vs%20Vue-409eff.svg?style=flat-square`
       },
@@ -152,9 +148,8 @@
                 type: 'dashed',
               },
             },
-            max(value) {
-              return (Math.floor(value.max / 100) + 1) * 100
-            },
+            min: 0,
+            max: 110000
           },
           series: [{
             name: 'GitHub Stars',
@@ -200,7 +195,6 @@
             trigger: 'axis',
           },
           grid: {
-            top: 12,
             bottom: 0,
             containLabel: true
           },
@@ -231,40 +225,41 @@
                 type: 'dashed',
               },
             },
-            max(value) {
-              return (Math.floor(value.max / 100) + 1) * 100
-            },
+            min: 90000,
+            max: 101000
           },
           series: [{
+            name: 'React',
             type: 'line',
             lineStyle: {
-              color: this.repo1.color,
+              color: '#61dafb'
             },
             showSymbol: false,
             itemStyle: {
-              color: this.repo1.color,
+              color: '#61dafb'
             },
-            markPoint: {
+            markLine: {
               data: [{
-                type: 'max',
+                yAxis: this.reactCount,
               }],
             },
-            data: this.displayChartData1,
+            data: this.reactLineData,
           }, {
+            name: 'Vue',
             type: 'line',
             lineStyle: {
-              color: this.repo2.color,
+              color: '#41b883',
             },
             showSymbol: false,
             itemStyle: {
-              color: this.repo2.color,
+              color: '#41b883',
             },
-            markPoint: {
+            markLine: {
               data: [{
-                type: 'max',
+                yAxis: this.vueCount,
               }],
             },
-            data: this.displayChartData2,
+            data: this.vueLineData,
           }],
         }
       },
@@ -291,7 +286,8 @@
       fetchReactCount() {
         fetchStargazerCount('facebook/react').then((count) => {
           this.reactCount = count
-          setTimeout(this.fetchReactCount, 3000)
+          this.reactLineData.push([Date.now(), count])
+          this.timeout.react = setTimeout(this.fetchReactCount, 3000)
         }, ({ response: { status, headers, data } }) => {
           if (status === 404) {
             this.errorMessage = data.message
@@ -306,7 +302,9 @@
       fetchVueCount() {
         fetchStargazerCount('vuejs/vue').then((count) => {
           this.vueCount = count
-          setTimeout(this.fetchVueCount, 3000)
+          this.vueLineData.push([Date.now(), count])
+
+          this.timeout.vue = setTimeout(this.fetchVueCount, 3000)
         }, ({ response: { status, headers, data } }) => {
           if (status === 404) {
             this.errorMessage = data.message
@@ -321,7 +319,9 @@
       graphqlFetchReactCount() {
         graphqlFetchStargazerCount('facebook', 'react').then((count) => {
           this.reactCount = count
-          setTimeout(this.graphqlFetchReactCount, 3000)
+          this.reactLineData.push([Date.now(), count])
+
+          this.timeout.react = setTimeout(this.graphqlFetchReactCount, 3000)
         }, ([{ type }]) => {
           if (type === 'RATE_LIMITED') {
             EventBus.$emit('require:accessToken', this.start, {
@@ -334,7 +334,9 @@
       graphqlFetchVueCount() {
         graphqlFetchStargazerCount('vuejs', 'vue').then((count) => {
           this.vueCount = count
-          setTimeout(this.graphqlFetchVueCount, 3000)
+          this.vueLineData.push([Date.now(), count])
+
+          this.timeout.vue = setTimeout(this.graphqlFetchVueCount, 3000)
         }, ([{ type }]) => {
           if (type === 'RATE_LIMITED') {
             EventBus.$emit('require:accessToken', this.start, {
@@ -354,6 +356,8 @@
     },
     beforeDestroy() {
       window.removeEventListener('resize', this.resizeChart)
+      clearTimeout(this.timeout.react)
+      clearTimeout(this.timeout.vue)
     },
   }
 </script>
