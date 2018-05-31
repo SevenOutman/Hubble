@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <el-alert type="warning">React vs. Vue 100k Star race is <router-link to="/react-vs-vue">LIVE</router-link></el-alert>
+    <el-alert type="warning" title=""><b>React vs. Vue 100k<i class="el-icon-star-on"></i> race is <router-link to="/react-vs-vue">LIVE</router-link></b></el-alert>
     <router-view class="router-view" />
     <el-dialog
       :title="dialogTitle || 'Error: Forbidden'"
@@ -115,6 +115,7 @@
 
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
 
     .el-alert__content {
       flex-grow: 1;
