@@ -89,8 +89,8 @@
       const defaultColor1 = randomColor()
       const defaultColor2 = presetColors[(presetColors.indexOf(defaultColor1) + 3) % presetColors.length]
       return {
-        reactCount: 97000,
-        vueCount: 95000,
+        reactCount: 0,
+        vueCount: 0,
         showShareButton: false,
         showShareDialog: false,
 
