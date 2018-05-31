@@ -17,7 +17,7 @@
 
         <el-col :md="12" :xs="24" style="color:#41b883">
           <div v-if="vueLast">
-            Vue's latest star: {{ vueLast.starredAt }} by {{ vueLast.node.login }}
+            Vue's latest star: {{ vueLast.starredAt | datetime }} by {{ vueLast.node.login }}
           </div>
         </el-col>
       </el-row>
@@ -254,9 +254,9 @@
             itemStyle: {
               color: '#61dafb'
             },
-            markLine: {
+            markPoint: {
               data: [{
-                yAxis: this.reactCount,
+                type: 'max',
               }],
             },
             data: this.reactLineData,
@@ -270,9 +270,9 @@
             itemStyle: {
               color: '#41b883',
             },
-            markLine: {
+            markPoint: {
               data: [{
-                yAxis: this.vueCount,
+                type: 'max',
               }],
             },
             data: this.vueLineData,
