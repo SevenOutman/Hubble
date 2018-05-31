@@ -13,12 +13,14 @@
           <div v-if="reactLast">
             React's latest star: {{ reactLast.starredAt | datetime }} by {{ reactLast.node.login }}
           </div>
+          <div v-else>&nbsp;</div>
         </el-col>
 
         <el-col :md="12" :xs="24" style="color:#41b883">
           <div v-if="vueLast">
             Vue's latest star: {{ vueLast.starredAt | datetime }} by {{ vueLast.node.login }}
           </div>
+          <div v-else>&nbsp;</div>
         </el-col>
       </el-row>
       <div class="chart-place">
