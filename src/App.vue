@@ -68,8 +68,7 @@
       },
       requireOAuth() {
         new Authenticator({ site_id: 'hubble.netlify.com' }).authenticate({
-          provider: 'github',
-          scope: 'repo'
+          provider: 'github'
         }, (err, data) => {
           if (err) {
             console.log(err)

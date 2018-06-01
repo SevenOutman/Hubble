@@ -176,7 +176,7 @@
           },
           grid: {
             bottom: 5,
-            containLabel: true
+            containLabel: true,
           },
           xAxis: {
             type: 'time',
@@ -339,30 +339,33 @@
         })
       },
       fetchRepo(fullname) {
-        return axios(`/repos/${fullname}`)
-          .then(({ data }) => {
-            // APIv3 cannot fetch more than 400 pages of stargazers
-            if (!this.useGraphQL && data.stargazers_count > 6000) {
-              this.requesting = false
-              EventBus.$emit('require:accessToken', this.start, {
-                title: 'Warning: Stars > 6,000',
-                body: 'Requests will exceed rate limit - 60req/min',
-              })
-              return Promise.reject()
-            }
-            return data
-          }, ({ response: { status, headers, data } }) => {
+        return axios(`/repos/${fullname}`, {
+          headers: {
+            Authorization: `token ${localStorage.getItem('access_token')}`,
+          },
+        }).then(({ data }) => {
+          // APIv3 cannot fetch more than 400 pages of stargazers
+          if (!this.useGraphQL && data.stargazers_count > 6000) {
             this.requesting = false
-            if (status === 404) {
-              this.errorMessage = data.message
-            } else if (status > 400) {
-              EventBus.$emit('require:accessToken', this.start, {
-                title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
-                body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null,
-              })
-            }
+            EventBus.$emit('require:accessToken', this.start, {
+              title: 'Warning: Stars > 6,000',
+              body: 'Requests will exceed rate limit - 60req/min',
+            })
             return Promise.reject()
-          })
+          }
+          return data
+        }, ({ response: { status, headers, data } }) => {
+          this.requesting = false
+          if (status === 404) {
+            this.errorMessage = data.message
+          } else if (status > 400) {
+            EventBus.$emit('require:accessToken', this.start, {
+              title: headers['x-ratelimit-remaining'] === '0' ? 'Rate Limit Exceeded' : null,
+              body: headers['x-ratelimit-remaining'] === '0' ? 'Request rate limit of 60req/min is exceeded' : null,
+            })
+          }
+          return Promise.reject()
+        })
       },
       fetchStargazers(fullname, { onPageData }) {
         return new Promise((resolve, reject) => {
