@@ -13,7 +13,18 @@
           {{ !requesting ? `${viewer ? stargazersCount : 'Start'}` : `Counting stars (${stargazersCount})`}}
         </el-button>
       </div>
-      <chart :options="chartOptions" ref="chart"></chart>
+      <div class="chart-place">
+        <chart :options="chartOptions" ref="chart"></chart>
+        <div class="buttons">
+          <el-switch
+            v-model="showOwnedReposOnly"
+            active-text="Only show repos that I own"
+            inactive-text="Show repos I contribute to"
+            style="margin-right: 1em"
+          >
+          </el-switch>
+        </div>
+      </div>
     </main>
     <footer align="center">
       <router-link to="/">Home</router-link>
@@ -68,11 +79,20 @@
           if (!loading) {
             const { login, repositories: { nodes, pageInfo: { endCursor, hasNextPage } } } = data.viewer
             this.viewer = login
-            this.reposWithStars = [...this.reposWithStars, ...nodes.filter(repository => repository.stargazers.totalCount > 0).map(repository => repository.nameWithOwner.split('/'))]
+            this.reposWithStars = [...this.reposWithStars, ...nodes.filter(repository => repository.stargazers.totalCount > 0).map(repository => [...repository.nameWithOwner.split('/'), repository.stargazers.totalCount])]
 
             if (hasNextPage && !nodes.find(repository => repository.stargazers.totalCount <= 0)) {
               this.afterPointer = endCursor
             } else if (this.reposWithStars.length) {
+              this.reposWithStars.sort(([owner1, repo1, stars1], [owner2, repo2, stars2]) => {
+                if (owner1 === this.viewer && owner2 !== this.viewer) {
+                  return -1
+                }
+                if (owner2 === this.viewer && owner1 !== this.viewer) {
+                  return 1
+                }
+                return stars2 - stars1
+              })
               const repo = this.reposWithStars[0]
               this.username = repo[0]
               this.repo = repo[1]
@@ -125,7 +145,7 @@
 
             if (starsFromPreviousYears < edges.length) {
               if (!hasPreviousPage) {
-                this.chartData.push([this.repo, 0])
+                this.chartData.push([this.repo, 0, this.username])
               }
               const lastChartData = this.chartData.pop()
               lastChartData[1] += edges.length - starsFromPreviousYears
@@ -171,11 +191,18 @@
         chartData: [],
         requesting: false,
         useGraphQL: false,
+        showOwnedReposOnly: true
       }
     },
     computed: {
+      displayChartData() {
+        if (this.showOwnedReposOnly) {
+          return this.chartData.filter(d => !!d).filter(([repo, star, owner]) => owner === this.viewer)
+        }
+        return this.chartData.filter(d => !!d)
+      },
       stargazersCount() {
-        return this.chartData.filter(d => !!d).reduce((sum, [name, count]) => sum + count, 0)
+        return this.displayChartData.filter(d => !!d).reduce((sum, [name, count]) => sum + count, 0)
       },
       chartOptions() {
         return {
@@ -184,6 +211,8 @@
           },
           grid: {
             bottom: 5,
+            left: 24,
+            right: 24,
             containLabel: true
           },
           xAxis: {
@@ -229,7 +258,7 @@
                 position: 'top',
               },
             },
-            data: this.chartData.filter(d => !!d),
+            data: this.displayChartData
           }],
         }
       },
@@ -354,10 +383,23 @@
         }
       }
 
-      .echarts {
+      .chart-place {
         flex-grow: 1;
         width: 100%;
-        height: auto;
+        display: flex;
+        flex-direction: column;
+
+        .echarts {
+          width: 100%;
+          flex-grow: 1;
+        }
+
+        .buttons {
+          flex-shrink: 0;
+          height: 40px;
+          width: 100%;
+          text-align: center;
+        }
       }
     }
   }
