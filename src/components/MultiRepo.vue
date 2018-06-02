@@ -10,24 +10,24 @@
         <el-row :gutter="10">
           <el-col :md="9" :xs="24">
             <el-form-item class="repo-input-group">
-              <el-color-picker v-model="repo1.color">
+              <el-color-picker v-model="repo1form.color">
               </el-color-picker>
               <div class="input-group">
-                <el-input placeholder="User/Org" v-model="repo1.owner">
+                <el-input placeholder="User/Org" v-model="repo1form.owner">
                 </el-input>
-                <el-input placeholder="Repo" v-model="repo1.repo">
+                <el-input placeholder="Repo" v-model="repo1form.repo">
                 </el-input>
               </div>
             </el-form-item>
           </el-col>
           <el-col :md="9" :xs="24">
             <el-form-item class="repo-input-group">
-              <el-color-picker v-model="repo2.color">
+              <el-color-picker v-model="repo2form.color">
               </el-color-picker>
               <div class="input-group">
-                <el-input placeholder="User/Org" v-model="repo2.owner">
+                <el-input placeholder="User/Org" v-model="repo2form.owner">
                 </el-input>
-                <el-input placeholder="Repo" v-model="repo2.repo">
+                <el-input placeholder="Repo" v-model="repo2form.repo">
                 </el-input>
               </div>
             </el-form-item>
@@ -81,7 +81,6 @@
   import moment from 'moment'
   import { graphqlFetchStargazers, restFetchStargazers } from '@/utils'
 
-
   const axios = AxiosFactory.create({
     baseURL: 'https://api.github.com',
     headers: {
@@ -113,15 +112,23 @@
       const defaultColor1 = randomColor()
       const defaultColor2 = presetColors[(presetColors.indexOf(defaultColor1) + 3) % presetColors.length]
       return {
-        repo1: {
+        repo1form: {
           defaultColor: defaultColor1,
           color: defaultColor1,
           owner: '',
           repo: '',
         },
-        repo2: {
+        repo2form: {
           defaultColor: defaultColor2,
           color: defaultColor2,
+          owner: '',
+          repo: '',
+        },
+        repo1: {
+          owner: '',
+          repo: '',
+        },
+        repo2: {
           owner: '',
           repo: '',
         },
@@ -154,6 +161,14 @@
       shareHTML() {
         return `<a href="${this.shareLink}"><img src="${this.badgeImgLink}" alt="Hubble"></a>`
       },
+      repo1formfullname() {
+        if (!this.repo1form.owner || !this.repo1form.repo) return null
+        return `${this.repo1form.owner}/${this.repo1form.repo}`
+      },
+      repo2formfullname() {
+        if (!this.repo2form.owner || !this.repo2form.repo) return null
+        return `${this.repo2form.owner}/${this.repo2form.repo}`
+      },
       repo1fullname() {
         if (!this.repo1.owner || !this.repo1.repo) return null
         return `${this.repo1.owner}/${this.repo1.repo}`
@@ -166,6 +181,17 @@
         return {
           tooltip: {
             trigger: 'axis',
+            formatter([repo1, repo2]) {
+              const numberWithCommas = (x) => {
+                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+              }
+              let tooltip = `${repo1.data[0]}<br>${repo1.marker}${repo1.seriesName}: ${numberWithCommas(repo1.data[1])}`
+              if (repo2) {
+                tooltip = `${tooltip}<br>${repo2.marker}${repo2.seriesName}: ${numberWithCommas(repo2.data[1])}<br>Diff: ${numberWithCommas(repo1.data[1] - repo2.data[1])}`
+              }
+
+              return tooltip
+            }
           },
           grid: {
             bottom: 5,
@@ -183,7 +209,7 @@
             },
             axisLabel: {
               color: '#333333',
-            },
+            }
           },
           yAxis: {
             type: 'value',
@@ -206,11 +232,11 @@
             name: this.repo1fullname,
             type: 'line',
             lineStyle: {
-              color: this.repo1.color,
+              color: this.repo1form.color,
             },
             showSymbol: false,
             itemStyle: {
-              color: this.repo1.color,
+              color: this.repo1form.color,
             },
             markPoint: {
               data: [{
@@ -222,11 +248,11 @@
             name: this.repo2fullname,
             type: 'line',
             lineStyle: {
-              color: this.repo2.color,
+              color: this.repo2form.color,
             },
             showSymbol: false,
             itemStyle: {
-              color: this.repo2.color,
+              color: this.repo2form.color,
             },
             markPoint: {
               data: [{
@@ -240,6 +266,12 @@
     },
     methods: {
       start() {
+        this.repo1.owner = this.repo1form.owner
+        this.repo1.repo = this.repo1form.repo
+        this.repo2.owner = this.repo2form.owner
+        this.repo2.repo = this.repo2form.repo
+
+
         this.displayStartDate = ''
         this.displayEndDate = ''
         this.displayChartData1 = []
@@ -480,19 +512,19 @@
       },
     },
     watch: {
-      repo1fullname: {
+      repo1formfullname: {
         immediate: true,
         handler(val) {
-          if (this.repo1.color === this.repo1.defaultColor && repoColors[val]) {
-            this.repo1.color = repoColors[val]
+          if (this.repo1form.color === this.repo1form.defaultColor && repoColors[val]) {
+            this.repo1form.color = repoColors[val]
           }
         },
       },
-      repo2fullname: {
+      repo2formfullname: {
         immediate: true,
         handler(val) {
-          if (this.repo2.color === this.repo2.defaultColor && repoColors[val]) {
-            this.repo2.color = repoColors[val]
+          if (this.repo2form.color === this.repo2form.defaultColor && repoColors[val]) {
+            this.repo2form.color = repoColors[val]
           }
         },
       },
@@ -500,11 +532,11 @@
     created() {
       const { v = '/', s = '/' } = this.$route.query
       const repo1 = v.split('/')
-      this.repo1.owner = repo1[0]
-      this.repo1.repo = repo1[1]
+      this.repo1form.owner = repo1[0]
+      this.repo1form.repo = repo1[1]
       const repo2 = s.split('/')
-      this.repo2.owner = repo2[0]
-      this.repo2.repo = repo2[1]
+      this.repo2form.owner = repo2[0]
+      this.repo2form.repo = repo2[1]
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
