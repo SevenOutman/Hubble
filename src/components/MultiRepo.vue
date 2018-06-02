@@ -326,10 +326,10 @@
           }
           // todo console.log(repo.stargazers_url)
           Promise.all([
-            this.fetchStargazers(this.repo1.owner, this.repo1.repo, {
+            this.fetchStargazers(this.repo1fullname, {
               onPageData: data => this.updateDataArray(data, this.chartData1, this.chartData2),
             }),
-            this.fetchStargazers(this.repo2.owner, this.repo2.repo, {
+            this.fetchStargazers(this.repo2fullname, {
               onPageData: data => this.updateDataArray(data, this.chartData2, this.chartData1),
             }),
           ]).then(() => {
@@ -345,14 +345,14 @@
           },
         }).then(({ data }) => {
           // APIv3 cannot fetch more than 400 pages of stargazers
-          if (!this.useGraphQL && data.stargazers_count > 6000) {
-            this.requesting = false
-            EventBus.$emit('require:accessToken', this.start, {
-              title: 'Warning: Stars > 6,000',
-              body: 'Requests will exceed rate limit - 60req/min',
-            })
-            return Promise.reject()
-          }
+          // if (!this.useGraphQL && data.stargazers_count > 6000) {
+          //   this.requesting = false
+          //   EventBus.$emit('require:accessToken', this.start, {
+          //     title: 'Warning: Stars > 6,000',
+          //     body: 'Requests will exceed rate limit - 60req/min',
+          //   })
+          //   return Promise.reject()
+          // }
           return data
         }, ({ response: { status, headers, data } }) => {
           this.requesting = false
