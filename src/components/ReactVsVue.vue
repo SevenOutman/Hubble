@@ -7,7 +7,14 @@
       <h2>Travel through GitHub Stars' history</h2>
     </header>
     <main>
-      <h2 style="margin:.5em 0">100k<i class="el-icon-star-on"></i> race, React vs. Vue</h2>
+      <transition name="fade" mode="out-in">
+        <h2 style="margin:.5em 0" v-if="showDiff" v-html="diffMessage" key="diff">
+
+        </h2>
+        <h2 style="margin:.5em 0" v-else key="title">
+          100k<i class="el-icon-star-on"></i> race, React vs. Vue
+        </h2>
+      </transition>
       <el-row style="width: 100%">
         <el-col :md="12" :xs="24" style="color:#61dafb">
           <div v-if="reactLast">
@@ -101,10 +108,23 @@
           react: null,
           vue: null,
           line: null
-        }
+        },
+        showDiff: false
       }
     },
     computed: {
+      diffMessage() {
+        const numberWithCommas = (x) => {
+          return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        if (this.reactCount > this.vueCount) {
+          return `React leads by ${numberWithCommas(this.reactCount - this.vueCount)}<i class="el-icon-star-on"></i>`
+        }
+        if (this.vueCount > this.reactCount) {
+          return `Vue leads by ${numberWithCommas(this.vueCount - this.reactCount)}<i class="el-icon-star-on"></i>`
+        }
+        return `100k<i class="el-icon-star-on"></i> race, React vs. Vue`
+      },
       lineChart: {
         get() {
           return this.chartType === 'line'
@@ -423,18 +443,39 @@
     mounted() {
       window.addEventListener('resize', this.resizeChart)
       this.start()
+
+      this.interval = setInterval(() => {
+        this.showDiff = !this.showDiff
+      }, 5000)
     },
     beforeDestroy() {
       window.removeEventListener('resize', this.resizeChart)
       clearTimeout(this.timeout.react)
       clearTimeout(this.timeout.vue)
       clearTimeout(this.timeout.line)
+      clearInterval(this.interval)
     },
   }
 </script>
 
 <style lang="less">
   .multi-repo {
+
+    h2 {
+      will-change: opacity;
+      &.fade-enter-active,
+      &.fade-leave-active {
+        transition: opacity 500ms;
+      }
+      &.fade-enter,
+      &.fade-leave-to {
+        opacity: 0;
+      }
+      &.fade-leave,
+      &.fade-enter-to {
+        opacity: 1;
+      }
+    }
 
     .el-form {
       width: 100%;
