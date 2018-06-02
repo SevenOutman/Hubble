@@ -77,7 +77,7 @@ export function graphqlFetchStargazers(owner, name, {
         variables: { owner, name, afterPointer },
       },
       headers: {
-        Authorization: `token ${localStorage.getItem('access_token')}`,
+        Authorization: `bearer ${localStorage.getItem('access_token')}`,
       },
     }).then(({ data: { data: { repository: { stargazers: { edges, pageInfo: { endCursor, hasNextPage } } } } } }) => {
       fullData = [...fullData, ...edges]
@@ -132,7 +132,7 @@ export function graphqlFetchStargazerCount(owner, name) {
       variables: { owner, name },
     },
     headers: {
-      Authorization: `token ${localStorage.getItem('access_token')}`,
+      Authorization: `bearer ${localStorage.getItem('access_token')}`,
     },
   }).then(({ data: { errors, data } }) => {
     if (errors) {

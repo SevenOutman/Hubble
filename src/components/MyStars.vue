@@ -17,9 +17,9 @@
         <chart :options="chartOptions" ref="chart"></chart>
         <div class="buttons">
           <el-switch
-            v-model="showOwnedReposOnly"
-            active-text="Only show repos that I own"
-            inactive-text="Show repos I contribute to"
+            v-model="showCollaboratorRepos"
+            active-text="Show also repos I'm collaborator"
+            inactive-text="Show only repos I'm owner"
             style="margin-right: 1em"
           >
           </el-switch>
@@ -191,12 +191,12 @@
         chartData: [],
         requesting: false,
         useGraphQL: false,
-        showOwnedReposOnly: true
+        showCollaboratorRepos: false
       }
     },
     computed: {
       displayChartData() {
-        if (this.showOwnedReposOnly) {
+        if (!this.showCollaboratorRepos) {
           return this.chartData.filter(d => !!d).filter(([repo, star, owner]) => owner === this.viewer)
         }
         return this.chartData.filter(d => !!d)
@@ -293,7 +293,10 @@
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
-      this.start()
+
+      if (this.$route.query.start !== undefined) {
+        this.start()
+      }
     },
     beforeDestroy() {
       window.removeEventListener('resize', this.resizeChart)

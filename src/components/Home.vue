@@ -25,7 +25,7 @@
     </main>
     <footer align="center">
       <router-link to="/repo-race">Repo race</router-link>
-      <router-link to="/my-stars-this-year">How many stars have I earned this year?</router-link>
+      <router-link to="/my-stars-this-year?start">How many stars have I earned this year?</router-link>
     </footer>
     <el-dialog
       title="Get your Hubble badge"
