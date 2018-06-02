@@ -102,20 +102,13 @@
     '#90ee90',
     '#00ced1',
     '#1e90ff',
-    '#c71585',
-    'rgba(255, 69, 0, 0.68)',
-    'rgb(255, 120, 0)',
-    'hsv(51, 100, 98)',
-    'hsva(120, 40, 94, 0.5)',
-    'hsl(181, 100%, 37%)',
-    'hsla(209, 100%, 56%, 0.73)',
-    '#c7158577',
+    '#c71585'
   ]
 
   const randomColor = () => presetColors[Math.round(Math.random() * presetColors.length)]
 
   export default {
-    name: "MultiRepo",
+    name: 'MultiRepo',
     data() {
       const defaultColor1 = randomColor()
       const defaultColor2 = presetColors[(presetColors.indexOf(defaultColor1) + 3) % presetColors.length]
@@ -210,6 +203,7 @@
             },
           },
           series: [{
+            name: this.repo1fullname,
             type: 'line',
             lineStyle: {
               color: this.repo1.color,
@@ -225,6 +219,7 @@
             },
             data: this.displayChartData1,
           }, {
+            name: this.repo2fullname,
             type: 'line',
             lineStyle: {
               color: this.repo2.color,
@@ -289,9 +284,23 @@
           Promise.all([
             this.graphqlFetchStargazers(this.repo1.owner, this.repo1.repo, {
               onPageData: data => this.updateDataArray(data, this.chartData1, this.chartData2),
+              onComplete: () => {
+                const [lastStarDate, stars] = this.chartData1[this.chartData1.length - 1]
+                const today = moment()
+                for (let d = moment(lastStarDate).add(1, 'day'); d.isSameOrBefore(today, 'day'); d.add(1, 'day')) {
+                  this.chartData1.push([d.format('YYYY-MM-DD'), stars])
+                }
+              }
             }),
             this.graphqlFetchStargazers(this.repo2.owner, this.repo2.repo, {
               onPageData: data => this.updateDataArray(data, this.chartData2, this.chartData1),
+              onComplete: () => {
+                const [lastStarDate, stars] = this.chartData2[this.chartData2.length - 1]
+                const today = moment()
+                for (let d = moment(lastStarDate).add(1, 'day'); d.isSameOrBefore(today, 'day'); d.add(1, 'day')) {
+                  this.chartData2.push([d.format('YYYY-MM-DD'), stars])
+                }
+              }
             }),
           ]).then(() => {
             this.requesting = false
@@ -328,9 +337,23 @@
           Promise.all([
             this.fetchStargazers(this.repo1fullname, {
               onPageData: data => this.updateDataArray(data, this.chartData1, this.chartData2),
+              onComplete: () => {
+                const [lastStarDate, stars] = this.chartData1[this.chartData1.length - 1]
+                const today = moment()
+                for (let d = moment(lastStarDate).add(1, 'day'); d.isSameOrBefore(today, 'day'); d.add(1, 'day')) {
+                  this.chartData1.push([d.format('YYYY-MM-DD'), stars])
+                }
+              }
             }),
             this.fetchStargazers(this.repo2fullname, {
               onPageData: data => this.updateDataArray(data, this.chartData2, this.chartData1),
+              onComplete: () => {
+                const [lastStarDate, stars] = this.chartData2[this.chartData2.length - 1]
+                const today = moment()
+                for (let d = moment(lastStarDate).add(1, 'day'); d.isSameOrBefore(today, 'day'); d.add(1, 'day')) {
+                  this.chartData2.push([d.format('YYYY-MM-DD'), stars])
+                }
+              }
             }),
           ]).then(() => {
             this.requesting = false
@@ -367,13 +390,14 @@
           return Promise.reject()
         })
       },
-      fetchStargazers(fullname, { onPageData }) {
+      fetchStargazers(fullname, { onPageData, onComplete }) {
         return new Promise((resolve, reject) => {
           restFetchStargazers(fullname, {
             onPageData: data => {
               onPageData && onPageData(data.map(star => star.starred_at.substr(0, 10)))
             },
             onComplete: (fullData) => {
+              onComplete && onComplete(fullData)
               resolve(fullData)
             },
             onError: ([error]) => {
@@ -389,13 +413,14 @@
           })
         })
       },
-      graphqlFetchStargazers(owner, repo, { onPageData }) {
+      graphqlFetchStargazers(owner, repo, { onPageData, onComplete }) {
         return new Promise((resolve, reject) => {
           graphqlFetchStargazers(owner, repo, {
             onPageData: data => {
               onPageData && onPageData(data.map(star => star.starredAt.substr(0, 10)))
             },
             onComplete: (fullData) => {
+              onComplete && onComplete(fullData)
               resolve(fullData)
             },
             onError: (error) => {
