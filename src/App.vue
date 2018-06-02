@@ -14,10 +14,10 @@
       <p>
         You might need to provide an access token.
         Follow <a
-        href="https://github.com/settings/tokens/new?scopes=repo&description=Hubble"
+        href="https://github.com/settings/tokens/new?description=Hubble"
         target="_blank"
       >this link</a> to create one and paste it below (<a
-        href="https://github.com/SevenOutman/Hubble/tree/netlify#why-is-access-token-preferred-rather-than-login-with-github"
+        href="https://github.com/SevenOutman/Hubble#why-is-access-token-preferred-rather-than-login-with-github"
         target="_blank">recommended</a>).
       </p>
       <div class="input-group" style="width: auto">
@@ -35,7 +35,7 @@
         Login with GitHub
       </el-button>
       <a
-        href="https://github.com/SevenOutman/Hubble/tree/netlify#why-is-it-required"
+        href="https://github.com/SevenOutman/Hubble#why-is-it-required"
         target="_blank"
         style="margin: 1em 0 -1em;display: block"
       >Why is this required?</a>
