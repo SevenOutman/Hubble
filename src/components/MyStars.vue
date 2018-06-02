@@ -8,7 +8,8 @@
     </header>
     <main>
       <div class="input-group">
-        <el-input :value="`Stars ${viewer ? `${viewer} has` : 'I have'} earned this year`" readonly v-if="!requesting" />
+        <el-input :value="`Stars ${viewer ? `${viewer} has` : 'I have'} earned this year`" readonly
+                  v-if="!requesting" />
         <el-button type="primary" :loading="requesting" @click="start">
           {{ !requesting ? `${viewer ? stargazersCount : 'Start'}` : `Counting stars (${stargazersCount})`}}
         </el-button>
@@ -38,6 +39,7 @@
   import gql from 'graphql-tag'
 
   import EventBus from '../bus'
+  import { graphqlFetchRepoStarsThisYear, graphqlFetchViewerBestarredRepos } from '@/utils';
 
   const YEAR = new Date().getFullYear()
 
@@ -191,7 +193,8 @@
         chartData: [],
         requesting: false,
         useGraphQL: false,
-        showCollaboratorRepos: false
+        showCollaboratorRepos: false,
+        suspended: false
       }
     },
     computed: {
@@ -279,17 +282,68 @@
           this.v4start()
         }
       },
-      v3start() {
-
-      },
       v4start() {
-        this.beforePointer = null
-        this.afterPointer = null
-        this.useGraphQL = true
+        graphqlFetchViewerBestarredRepos({
+          onPageData: ({ viewer }) => this.viewer = viewer,
+          onComplete: ({ repositories }) => {
+            this.reposWithStars = repositories
+              .map(repository => [...repository.nameWithOwner.split('/'), repository.stargazers.totalCount])
+              .sort(([owner1, repo1, stars1], [owner2, repo2, stars2]) => {
+                if (owner1 === this.viewer && owner2 !== this.viewer) {
+                  return -1
+                }
+                if (owner2 === this.viewer && owner1 !== this.viewer) {
+                  return 1
+                }
+                return stars2 - stars1
+              })
+            this.fetchRepoStarThisYear()
+          }
+        })
+      },
+      fetchRepoStarThisYear(i = 0) {
+        let repo = this.reposWithStars[i]
+        if (!repo) {
+          this.requesting = false
+          this.suspended = false
+        } else if (repo[0] !== this.viewer && !this.showCollaboratorRepos) {
+          this.requesting = false
+          this.suspended = i
+        } else {
+          let total = 0
+          graphqlFetchRepoStarsThisYear(repo[0], repo[1], {
+            onPageData: (stars) => {
+              if (stars.length > 0) {
+                if (total === 0) {
+                  this.chartData.push([repo[1], stars.length, repo[0]])
+                } else {
+                  let data = this.chartData.pop()
+                  data[1] += stars.length
+                  this.chartData.push(data)
+                }
+                total += stars.length
+              }
+            },
+            onComplete: () => {
+              this.fetchRepoStarThisYear(i + 1)
+            }
+          })
+        }
+      },
+      resume(i) {
+        this.requesting = true
+        this.fetchRepoStarThisYear(i)
       },
       resizeChart() {
         this.$refs.chart.resize()
       },
+    },
+    watch: {
+      showCollaboratorRepos(val) {
+        if (val && this.suspended !== false && !this.requesting) {
+          this.resume(this.suspended)
+        }
+      }
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
