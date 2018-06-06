@@ -17,17 +17,25 @@
       </transition>
       <el-row style="width: 100%">
         <el-col :md="12" :xs="24" style="color:#61dafb">
-          <div v-if="reactLast">
-            Latest: {{ reactLast.starredAt | datetime }} by {{ reactLast.node.login }}
+          <div class="marquee-container">
+            <transition name="marquee">
+              <div v-if="reactLast" :key="reactLast.starredAt + reactLast.node.login">
+                Latest: {{ reactLast.starredAt | datetime }} by {{ reactLast.node.login }}
+              </div>
+              <div v-else>&nbsp;</div>
+            </transition>
           </div>
-          <div v-else>&nbsp;</div>
         </el-col>
 
         <el-col :md="12" :xs="24" style="color:#41b883">
-          <div v-if="vueLast">
-            Latest: {{ vueLast.starredAt | datetime }} by {{ vueLast.node.login }}
+          <div class="marquee-container">
+            <transition name="marquee">
+              <div v-if="vueLast" :key="vueLast.starredAt + vueLast.node.login">
+                Latest: {{ vueLast.starredAt | datetime }} by {{ vueLast.node.login }}
+              </div>
+              <div v-else>&nbsp;</div>
+            </transition>
           </div>
-          <div v-else>&nbsp;</div>
         </el-col>
       </el-row>
       <div class="chart-place">
@@ -107,9 +115,9 @@
         timeout: {
           react: null,
           vue: null,
-          line: null
+          line: null,
         },
-        showDiff: false
+        showDiff: false,
       }
     },
     computed: {
@@ -131,7 +139,7 @@
         },
         set(val) {
           this.chartType = val ? 'line' : 'bar'
-        }
+        },
       },
       badgeImgLink() {
         return `https://img.shields.io/badge/Hubble-React%20vs%20Vue-409eff.svg?style=flat-square`
@@ -158,7 +166,7 @@
             bottom: 0,
             left: window.innerWidth < 500 ? 12 : '8%',
             right: window.innerWidth < 500 ? 12 : '8%',
-            containLabel: true
+            containLabel: true,
           },
           xAxis: {
             type: 'category',
@@ -173,7 +181,7 @@
             },
             axisLabel: {
               color: '#333333',
-            }
+            },
           },
           yAxis: {
             type: 'value',
@@ -189,7 +197,7 @@
               },
             },
             min: 0,
-            max: 110000
+            max: 110000,
           },
           series: [{
             name: 'GitHub Stars',
@@ -203,27 +211,27 @@
                   fontSize: 72,
                   fontWeight: 'bold',
                   color: '#ffffff',
-                  align: 'center'
+                  align: 'center',
                 },
                 h2: {
                   fontSize: 72,
                   fontWeight: 'bold',
                   color: '#ffffff',
-                  align: 'center'
-                }
+                  align: 'center',
+                },
               } : {
                 h1: {
                   fontSize: 24,
                   fontWeight: 'bold',
                   color: '#ffffff',
-                  align: 'center'
+                  align: 'center',
                 },
                 h2: {
                   fontSize: 24,
                   fontWeight: 'bold',
                   color: '#ffffff',
-                  align: 'center'
-                }
+                  align: 'center',
+                },
               },
             },
             barMaxWidth: 300,
@@ -235,7 +243,7 @@
                     '#41b883', // vue
                   ]
                   return colorList[params.dataIndex]
-                }
+                },
               },
             },
             data: [this.reactCount, this.vueCount],
@@ -252,7 +260,7 @@
             bottom: 0,
             left: window.innerWidth < 500 ? 12 : '8%',
             right: window.innerWidth < 500 ? 12 : '8%',
-            containLabel: true
+            containLabel: true,
           },
           xAxis: {
             type: 'time',
@@ -282,17 +290,17 @@
               },
             },
             min: 92000,
-            max: 101000
+            max: 101000,
           },
           series: [{
             name: 'React',
             type: 'line',
             showSymbol: false,
             lineStyle: {
-              color: '#61dafb'
+              color: '#61dafb',
             },
             itemStyle: {
-              color: '#61dafb'
+              color: '#61dafb',
             },
             markPoint: {
               data: [{
@@ -325,7 +333,7 @@
         const date = new Date(isoDate)
         const pad0 = n => n < 10 ? `0${n}` : `${n}`
         return `${date.getFullYear()}-${pad0(date.getMonth() + 1)}-${pad0(date.getDate())} ${pad0(date.getHours())}:${pad0(date.getMinutes())}:${pad0(date.getSeconds())}`
-      }
+      },
     },
     methods: {
       start() {
@@ -427,7 +435,7 @@
           if (type === 'RATE_LIMITED') {
             EventBus.$emit('require:accessToken', this.start, {
               title: 'Rate Limit Exceeded',
-              body: 'Request rate limit of 60req/min is exceeded'
+              body: 'Request rate limit of 60req/min is exceeded',
             })
           }
         })
@@ -475,6 +483,34 @@
       &.fade-enter-to {
         opacity: 1;
       }
+    }
+
+    .marquee-container {
+      height: 18px;
+      overflow: hidden;
+      position: relative;
+      .marquee-enter-active,
+      .marquee-leave-active {
+        will-change: transform;
+        transition: transform 500ms;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        text-align: center;
+      }
+      .marquee-enter {
+        transform: translateY(100%);
+      }
+      .marquee-leave-to {
+        transform: translateY(-100%);
+      }
+      .marquee-leave,
+      .marquee-enter-to {
+        transform: translateY(0);
+      }
+
     }
 
     .el-form {
