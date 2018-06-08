@@ -39,7 +39,7 @@
         </el-col>
       </el-row>
       <div class="chart-place">
-        <chart :options="chartOptions" ref="chart"></chart>
+        <chart :options="chartOptions" ref="chart" v-loading="isChartLoading"></chart>
         <div class="buttons">
           <el-switch
             v-model="lineChart"
@@ -82,19 +82,10 @@
 </template>
 
 <script>
-  import AxiosFactory from 'axios'
+  import axios from 'axios'
   import EventBus from '../bus'
   import moment from 'moment'
   import { fetchStargazerCount, graphqlFetchStargazerCount, graphqlFetchStargazers, restFetchStargazers } from '@/utils'
-
-
-  const axios = AxiosFactory.create({
-    baseURL: 'https://api.github.com',
-    headers: {
-      Accept: 'application/vnd.github.v3+json',
-      Authorization: `token ${localStorage.getItem('access_token')}`,
-    },
-  })
 
   export default {
     name: 'ReactVsVue',
@@ -104,8 +95,18 @@
         vueCount: 0,
         reactLast: null,
         vueLast: null,
+
+        reactStarHistory: [],
+        vueStarHistory: [],
+
+        reactLineDataToday: null,
+        vueLineDataToday: null,
+
         reactLineData: [],
         vueLineData: [],
+
+        lineDataPlaceholder: [],
+
         showShareButton: false,
         showShareDialog: false,
 
@@ -118,6 +119,8 @@
           line: null,
         },
         showDiff: false,
+        barChartLoading: true,
+        lineChartLoading: true,
       }
     },
     computed: {
@@ -140,6 +143,10 @@
         set(val) {
           this.chartType = val ? 'line' : 'bar'
         },
+      },
+      isChartLoading() {
+        console.log(this.chartType, `${this.chartType}ChartLoading`, this[`${this.chartType}ChartLoading`])
+        return this[`${this.chartType}ChartLoading`]
       },
       badgeImgLink() {
         return `https://img.shields.io/badge/Hubble-React%20vs%20Vue-409eff.svg?style=flat-square`
@@ -251,15 +258,32 @@
         }
       },
       lineChartOptions() {
+
         return {
           tooltip: {
             trigger: 'axis',
+            formatter: ([repo1, repo2]) => {
+              let timeFormat = 'YYYY-MM-DD'
+              if (repo1.dataIndex === this.reactLineData.length - 1) {
+                timeFormat = 'YYYY-MM-DD HH:mm:ss'
+              }
+              const numberWithCommas = (x) => {
+                if (!x) return '?'
+                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+              }
+              let tooltip = `${moment(repo1.data[0]).format(timeFormat)}<br>${repo1.marker}${repo1.seriesName}: ${numberWithCommas(repo1.data[1])}`
+              if (repo2) {
+                tooltip = `${tooltip}<br>${repo2.marker}${repo2.seriesName}: ${numberWithCommas(repo2.data[1])}<br>Diff: ${numberWithCommas(repo1.data[1] - repo2.data[1])}`
+              }
+
+              return tooltip
+            }
           },
           grid: {
             top: 12,
-            bottom: 0,
+            bottom: 40,
             left: window.innerWidth < 500 ? 12 : '8%',
-            right: window.innerWidth < 500 ? 12 : '8%',
+            right: window.innerWidth < 500 ? 20 : '8%',
             containLabel: true,
           },
           xAxis: {
@@ -289,9 +313,32 @@
                 type: 'dashed',
               },
             },
-            min: 92000,
-            max: 101000,
+            max: ({ max, min }) => {
+              let paddingTop = 240
+              let paddingBottom = 50
+              let minAxis = Math.floor((min - paddingBottom) / 100) * 100
+              let markHeight = 43
+              let chartFullHeight = this.$refs.chart.$el.clientHeight
+              // (maxAxis - max) / (maxAxis - minAxis) = markHeight / chartFullHeight
+              let maxAxis = (chartFullHeight * max - markHeight * minAxis) / (chartFullHeight - markHeight)
+              let closedHundred = Math.ceil(maxAxis / 100) * 100
+              return closedHundred
+            },
+            min: ({ min }) => {
+              let paddingBottom = 50
+              let closedHundred = Math.floor((min - paddingBottom) / 100) * 100
+              return closedHundred
+            },
           },
+          dataZoom: [
+            {
+              type: 'inside',
+              minValueSpan: 3600 * 24 * 1000 * 30,
+            },
+            {
+              minValueSpan: 3600 * 24 * 1000 * 30,
+            }
+          ],
           series: [{
             name: 'React',
             type: 'line',
@@ -301,11 +348,6 @@
             },
             itemStyle: {
               color: '#61dafb',
-            },
-            markPoint: {
-              data: [{
-                type: 'max',
-              }],
             },
             data: this.reactLineData,
           }, {
@@ -317,11 +359,6 @@
             },
             itemStyle: {
               color: '#41b883',
-            },
-            markPoint: {
-              data: [{
-                type: 'max',
-              }],
             },
             data: this.vueLineData,
           }],
@@ -336,54 +373,133 @@
       },
     },
     methods: {
-      start() {
-        // If access token is not present, use APIv3
-        if (!localStorage.getItem('access_token')) {
-          this.v3start()
-        } else {
-          this.v4start()
+      updateLineChartData() {
+        const upperMark = {
+          data: [{
+            type: 'max',
+          }],
+          symbolRotate: 20,
+          label: {
+            offset: [-3, 0]
+          },
         }
-        this.pushLineData()
+        const lowerMark = {
+          data: [{
+            type: 'max',
+          }],
+          symbolRotate: 200,
+          label: {
+            offset: [3, 10]
+          },
+        }
+        this.$nextTick(() => {
+          if (this.lineChart) {
+            this.$refs.chart.mergeOptions({
+              series: [
+                {
+                  data: [...this.reactLineData, ...this.lineDataPlaceholder],
+                  markPoint: this.reactCount >= this.vueCount ? upperMark : lowerMark,
+                },
+                {
+                  data: [...this.vueLineData, ...this.lineDataPlaceholder],
+                  markPoint: this.vueCount > this.reactCount ? upperMark : lowerMark,
+                }
+              ],
+            })
+          }
+        })
+      },
+      async start() {
+        // If access token is not present, use APIv3
+        try {
+          if (!localStorage.getItem('access_token')) {
+            await this.v3start()
+          } else {
+            await this.v4start()
+          }
+        } finally {
+          this.barChartLoading = false
+          try {
+            await this.fetchHistoryStars()
+          } finally {
+            this.lineChartLoading = false
+            this.updateLineChartData()
+            this.pushLineData()
+          }
+        }
+      },
+      async fetchHistoryStars() {
+        const { data: { date: updatedAt } } = await axios('https://bestofjs-api-v2.firebaseapp.com/projects.json')
+        for (let d = moment(updatedAt).add(1, 'day'), i = 0; i < 14; d.add(1, 'day'), i++) {
+          this.lineDataPlaceholder.push([+d, null])
+        }
+        return Promise.all([
+          axios('https://bestofjs-api-v1.now.sh/projects/facebook/react')
+            .then(({ data }) => {
+              const dailyTrends = data['daily-trends']
+              const yesterday = data.github.stargazers_count
+              const history = [[updatedAt, yesterday]]
+              this.reactLineData.unshift([+moment(updatedAt), yesterday])
+              let stars = yesterday
+              for (let d = moment(updatedAt).subtract(1, 'day'), i = dailyTrends.length - 1; i >= 0; d.subtract(1, 'day'), i--) {
+                stars -= dailyTrends[i]
+                history.unshift([+d, stars])
+              }
+              this.reactLineData = history
+              this.reactStarHistory = history
+            }),
+          axios('https://bestofjs-api-v1.now.sh/projects/vuejs/vue')
+            .then(({ data }) => {
+              const dailyTrends = data['daily-trends']
+              const yesterday = data.github.stargazers_count
+              const history = [[updatedAt, yesterday]]
+              this.vueLineData.unshift([+moment(updatedAt), yesterday])
+              let stars = yesterday
+              for (let d = moment(updatedAt).subtract(1, 'day'), i = dailyTrends.length - 1; i >= 0; d.subtract(1, 'day'), i--) {
+                stars -= dailyTrends[i]
+                history.unshift([+d, stars])
+              }
+              this.vueLineData = history
+              this.vueStarHistory = history
+            })
+        ])
       },
       pushLineData() {
-        const now = Math.trunc(Date.now() / 1000) * 1000
+        const now = +moment()
         if (this.vueCount && this.reactCount) {
-          if (this.reactLineData.length) {
-            this.reactLineData.push([now, this.reactCount])
+          // if (this.reactLineDataToday.length) {
+          if (!this.reactLineDataToday) {
+            this.reactLineDataToday = [now, this.reactCount]
+            this.reactLineData.push(this.reactLineDataToday)
           } else {
-            for (let i = 299; i >= 0; i--) {
-              this.reactLineData.push([now - i * 1000, this.reactCount])
-            }
+            [this.reactLineDataToday[0], this.reactLineDataToday[1]] = [now, this.reactCount]
           }
-          while (this.reactLineData.length > 300) {
-            this.reactLineData.shift()
-          }
-
-          if (this.vueLineData.length) {
-            this.vueLineData.push([now, this.vueCount])
+          if (!this.vueLineDataToday) {
+            this.vueLineDataToday = [now, this.vueCount]
+            this.vueLineData.push(this.vueLineDataToday)
           } else {
-            for (let i = 299; i >= 0; i--) {
-              this.vueLineData.push([now - i * 1000, this.vueCount])
-            }
+            [this.vueLineDataToday[0], this.vueLineDataToday[1]] = [now, this.vueCount]
           }
-          while (this.vueLineData.length > 300) {
-            this.vueLineData.shift()
-          }
+          this.updateLineChartData()
         }
         this.timeout.line = setTimeout(this.pushLineData, 1000)
       },
       // GraphQL API
       v4start() {
-        this.graphqlFetchReactCount()
-        this.graphqlFetchVueCount()
+        return Promise.all([
+          this.graphqlFetchReactCount(),
+          this.graphqlFetchVueCount()
+        ])
       },
       // REST API
       v3start() {
-        this.fetchReactCount()
-        this.fetchVueCount()
+        return Promise.all([
+          this.fetchReactCount(),
+          this.fetchVueCount()
+        ])
       },
       fetchReactCount() {
-        fetchStargazerCount('facebook/react').then((count) => {
+        return fetchStargazerCount('facebook/react').then((count) => {
           this.reactCount = count
           this.timeout.react = setTimeout(this.fetchReactCount, 3000)
         }, ({ response: { status, headers, data } }) => {
@@ -398,7 +514,7 @@
         })
       },
       fetchVueCount() {
-        fetchStargazerCount('vuejs/vue').then((count) => {
+        return fetchStargazerCount('vuejs/vue').then((count) => {
           this.vueCount = count
           this.timeout.vue = setTimeout(this.fetchVueCount, 3000)
         }, ({ response: { status, headers, data } }) => {
@@ -413,7 +529,7 @@
         })
       },
       graphqlFetchReactCount() {
-        graphqlFetchStargazerCount('facebook', 'react').then(({ total, last }) => {
+        return graphqlFetchStargazerCount('facebook', 'react').then(({ total, last }) => {
           this.reactCount = total
           this.timeout.react = setTimeout(this.graphqlFetchReactCount, 3000)
           this.reactLast = last
@@ -427,7 +543,7 @@
         })
       },
       graphqlFetchVueCount() {
-        graphqlFetchStargazerCount('vuejs', 'vue').then(({ total, last }) => {
+        return graphqlFetchStargazerCount('vuejs', 'vue').then(({ total, last }) => {
           this.vueCount = total
           this.timeout.vue = setTimeout(this.graphqlFetchVueCount, 3000)
           this.vueLast = last
