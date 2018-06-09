@@ -145,7 +145,6 @@
         },
       },
       isChartLoading() {
-        console.log(this.chartType, `${this.chartType}ChartLoading`, this[`${this.chartType}ChartLoading`])
         return this[`${this.chartType}ChartLoading`]
       },
       badgeImgLink() {
@@ -264,12 +263,12 @@
             trigger: 'axis',
             formatter: ([repo1, repo2]) => {
               let timeFormat = 'YYYY-MM-DD'
-              if (repo1.dataIndex === this.reactLineData.length - 1) {
+              if (repo1.seriesIndex > 1 || repo1.dataIndex === this.reactLineData.length - 1) {
                 timeFormat = 'YYYY-MM-DD HH:mm:ss'
               }
               const numberWithCommas = (x) => {
-                if (!x) return '?'
-                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                if (isNaN(x)) return '?'
+                return Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
               }
               let tooltip = `${moment(repo1.data[0]).format(timeFormat)}<br>${repo1.marker}${repo1.seriesName}: ${numberWithCommas(repo1.data[1])}`
               if (repo2) {
@@ -361,6 +360,32 @@
               color: '#41b883',
             },
             data: this.vueLineData,
+          }, {
+            name: 'React(est.)',
+            type: 'line',
+            showSymbol: false,
+            lineStyle: {
+              color: '#61dafb',
+              opacity: 0.2
+            },
+            itemStyle: {
+              color: '#61dafb',
+              opacity: 0.2
+            },
+            data: []
+          }, {
+            name: 'Vue(est.)',
+            type: 'line',
+            showSymbol: false,
+            lineStyle: {
+              color: '#41b883',
+              opacity: 0.2
+            },
+            itemStyle: {
+              color: '#41b883',
+              opacity: 0.2
+            },
+            data: []
           }],
         }
       },
@@ -394,15 +419,60 @@
         }
         this.$nextTick(() => {
           if (this.lineChart) {
+            const reactEstData = []
+            const vueEstData = []
+
+            let reactRate
+            let vueRate
+
+            let reactEst100k
+            let vueEst100k
+
+            let now
+
+            if (this.reactLineData.length >= 2) {
+              let latest = this.reactLineData[this.reactLineData.length - 1]
+              let previous = this.reactLineData[this.reactLineData.length - 2]
+              now = latest[0]
+              reactEstData.push(latest)
+              reactRate = (latest[1] - previous[1]) / (latest[0] - previous[0])
+              reactEst100k = latest[0] + Math.round((100000 - latest[1]) / reactRate)
+            }
+
+            if (this.vueLineData.length >= 2) {
+              let latest = this.vueLineData[this.vueLineData.length - 1]
+              let previous = this.vueLineData[this.vueLineData.length - 2]
+              vueEstData.push(latest)
+              vueRate = (latest[1] - previous[1]) / (latest[0] - previous[0])
+              vueEst100k = latest[0] + Math.round((100000 - latest[1]) / vueRate)
+            }
+
+
+            let estCatchUpCount
+            if (this.reactCount > this.vueCount) {
+              let approchRate = vueRate - reactRate
+              let estCatchUp = Math.round((this.reactCount - this.vueCount) / approchRate)
+              reactEstData.push([now + estCatchUp, this.reactCount + estCatchUp * reactRate])
+              vueEstData.push([now + estCatchUp, this.vueCount + estCatchUp * vueRate])
+            }
+            reactEstData.push([reactEst100k, 100000])
+            vueEstData.push([vueEst100k, 100000])
+
             this.$refs.chart.mergeOptions({
               series: [
                 {
-                  data: [...this.reactLineData, ...this.lineDataPlaceholder],
+                  data: [...this.reactLineData,],
                   markPoint: this.reactCount >= this.vueCount ? upperMark : lowerMark,
                 },
                 {
-                  data: [...this.vueLineData, ...this.lineDataPlaceholder],
+                  data: [...this.vueLineData,],
                   markPoint: this.vueCount > this.reactCount ? upperMark : lowerMark,
+                },
+                {
+                  data: reactEstData
+                },
+                {
+                  data: vueEstData,
                 }
               ],
             })
@@ -438,8 +508,7 @@
             .then(({ data }) => {
               const dailyTrends = data['daily-trends']
               const yesterday = data.github.stargazers_count
-              const history = [[updatedAt, yesterday]]
-              this.reactLineData.unshift([+moment(updatedAt), yesterday])
+              const history = [[+moment(updatedAt), yesterday]]
               let stars = yesterday
               for (let d = moment(updatedAt).subtract(1, 'day'), i = dailyTrends.length - 1; i >= 0; d.subtract(1, 'day'), i--) {
                 stars -= dailyTrends[i]
@@ -452,8 +521,7 @@
             .then(({ data }) => {
               const dailyTrends = data['daily-trends']
               const yesterday = data.github.stargazers_count
-              const history = [[updatedAt, yesterday]]
-              this.vueLineData.unshift([+moment(updatedAt), yesterday])
+              const history = [[+moment(updatedAt), yesterday]]
               let stars = yesterday
               for (let d = moment(updatedAt).subtract(1, 'day'), i = dailyTrends.length - 1; i >= 0; d.subtract(1, 'day'), i--) {
                 stars -= dailyTrends[i]
