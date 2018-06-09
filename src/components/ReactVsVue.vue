@@ -332,10 +332,12 @@
           dataZoom: [
             {
               type: 'inside',
-              minValueSpan: 3600 * 24 * 1000 * 30,
+              start: 75,
+              minSpan: 25,
             },
             {
-              minValueSpan: 3600 * 24 * 1000 * 30,
+              minSpan: 25,
+              start: 75
             }
           ],
           series: [{
