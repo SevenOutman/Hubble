@@ -77,6 +77,55 @@
           <el-input v-model="shareHTML" readonly></el-input>
         </el-form-item>
       </el-form>
+      <div class="divider">or</div>
+      <div class="fb-share-button" data-href="https://hubble.js.org/#/react-vs-vue" data-layout="button_count"
+           data-size="small" data-mobile-iframe="true">
+        <a target="_blank"
+           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fhubble.js.org%2F%23%2Freact-vs-vue&amp;src=sdkpreparse"
+           class="fb-xfbml-parse-ignore"
+           style="text-decoration: none"
+        >
+          <el-button
+            type="primary"
+            style="display: block; width: 100%;line-height: 24px;margin-bottom: 15px;background-color: #4267b2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px"
+              y="0px" width="50" height="50" viewBox="0 0 50 50"
+              style="width:24px;height:24px"
+              class="octicon"
+            >
+              <path
+                d="M40,0H10C4.486,0,0,4.486,0,10v30c0,5.514,4.486,10,10,10h30c5.514,0,10-4.486,10-10V10C50,4.486,45.514,0,40,0z M39,17h-3 c-2.145,0-3,0.504-3,2v3h6l-1,6h-5v20h-7V28h-3v-6h3v-3c0-4.677,1.581-8,7-8c2.902,0,6,1,6,1V17z"
+                style="fill:#ffffff;transform: scale(.96,.96)"
+              ></path>
+            </svg>
+            Share
+          </el-button>
+        </a>
+        <a target="_blank"
+           :href="twitterShareLink"
+           class="twitter-share-button"
+           style="text-decoration: none"
+        >
+          <el-button type="primary" style="display: block; width: 100%;line-height: 24px; background-color: #1da1f2">
+            <svg
+              class="octicon"
+              viewbox="0 0 2000 1625.36"
+              width="2000"
+              height="1625.36"
+              version="1.1"
+              xmlns="http://www.w3.org/2000/svg"
+              style="width:24px;height:24px"
+            >
+              <path
+                d="m 1999.9999,192.4 c -73.58,32.64 -152.67,54.69 -235.66,64.61 84.7,-50.78 149.77,-131.19 180.41,-227.01 -79.29,47.03 -167.1,81.17 -260.57,99.57 C 1609.3399,49.82 1502.6999,0 1384.6799,0 c -226.6,0 -410.328,183.71 -410.328,410.31 0,32.16 3.628,63.48 10.625,93.51 -341.016,-17.11 -643.368,-180.47 -845.739,-428.72 -35.324,60.6 -55.5583,131.09 -55.5583,206.29 0,142.36 72.4373,267.95 182.5433,341.53 -67.262,-2.13 -130.535,-20.59 -185.8519,-51.32 -0.039,1.71 -0.039,3.42 -0.039,5.16 0,198.803 141.441,364.635 329.145,402.342 -34.426,9.375 -70.676,14.395 -108.098,14.395 -26.441,0 -52.145,-2.578 -77.203,-7.364 52.215,163.008 203.75,281.649 383.304,284.946 -140.429,110.062 -317.351,175.66 -509.5972,175.66 -33.1211,0 -65.7851,-1.949 -97.8828,-5.738 181.586,116.4176 397.27,184.359 628.988,184.359 754.732,0 1167.462,-625.238 1167.462,-1167.47 0,-17.79 -0.41,-35.48 -1.2,-53.08 80.1799,-57.86 149.7399,-130.12 204.7499,-212.41"
+                style="fill:#ffffff;transform: scale(.012, .012)"
+              />
+            </svg>
+            Tweet
+          </el-button>
+        </a>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -89,6 +138,18 @@
 
   export default {
     name: 'ReactVsVue',
+    metaInfo: {
+      meta: [
+        // facebook
+        { property: 'og:url', content: 'https://hubble.js.org/#/react-vs-vue' },
+        { property: 'og:title', content: 'React vs. Vue · Hubble' },
+        { property: 'og:description', content: '100k stars race between React and Vue is LIVE now.' },
+        { property: 'og:image', content: 'https://hubble.js.org/static/react-vs-vue.png' },
+        // twitter
+        { property: 'twitter:title', content: 'React vs. Vue · Hubble' },
+        { property: 'twitter:description', content: '100k stars race between React and Vue is LIVE now.' }
+      ]
+    },
     data() {
       return {
         reactCount: 0,
@@ -124,6 +185,27 @@
       }
     },
     computed: {
+      twitterShareLink() {
+        const base = 'https://twitter.com/intent/tweet'
+        let text = 'React vs. Vue 100k stars race is LIVE!'
+        if (this.reactCount > this.vueCount) {
+          text = `React leads by ${this.reactCount - this.vueCount} in the 100k stars race against Vue!`
+        }
+        if (this.reactCount < this.vueCount) {
+          text = `Vue leads by ${this.vueCount - this.reactCount} in the 100k stars race against React!`
+        }
+        const params = {
+          text,
+          url: 'https://hubble.js.org/#/react-vs-vue',
+          hashtags: ['vuejs', 'reactjs', 'javascript']
+        }
+
+        function composeParams(params) {
+          return Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value instanceof Array ? value.join(',') : value)}`).join('&')
+        }
+
+        return `${base}?${composeParams(params)}`
+      },
       diffMessage() {
         const numberWithCommas = (x) => {
           return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
