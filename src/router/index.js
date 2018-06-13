@@ -28,7 +28,7 @@ const router = new Router({
           component: MultiRepo
         },
         {
-          path: '/react-vs-vue(!\.png)',
+          path: '/react-vs-vue',
           component: ReactVsVue,
           meta: {
             title: 'React vs. Vue'
@@ -39,12 +39,12 @@ const router = new Router({
   ]
 })
 
-router.beforeEach((to, from, next) => {
-  if (to.meta && to.meta.title) {
-    document.title = `${to.meta.title} · Hubble`
-  } else {
-    document.title = 'Hubble'
-  }
-  next()
-})
+// router.beforeEach((to, from, next) => {
+//   if (to.meta && to.meta.title) {
+//     document.title = `${to.meta.title} · Hubble`
+//   } else {
+//     document.title = 'Hubble'
+//   }
+//   next()
+// })
 export default router
