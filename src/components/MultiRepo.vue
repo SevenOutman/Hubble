@@ -153,7 +153,7 @@
         return `https://img.shields.io/badge/Hubble-${this.repo1.repo.replace('-', '--')}%20vs%20${this.repo2.repo.replace('-', '--')}-409eff.svg?style=flat-square`
       },
       shareLink() {
-        return `https://hubble.js.org/#/repo-race?v=${this.repo1fullname}&s=${this.repo2fullname}&start`
+        return `https://hubble.js.org/repo-race?v=${this.repo1fullname}&s=${this.repo2fullname}&start`
       },
       shareMarkdown() {
         return `[![Hubble](${this.badgeImgLink})](${this.shareLink})`

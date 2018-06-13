@@ -9,6 +9,7 @@ import ReactVsVue from '@/components/ReactVsVue'
 Vue.use(Router)
 
 const router = new Router({
+  mode: 'history',
   routes: [
     {
       path: '',
@@ -27,7 +28,7 @@ const router = new Router({
           component: MultiRepo
         },
         {
-          path: '/react-vs-vue',
+          path: '/react-vs-vue(!\.png)',
           component: ReactVsVue,
           meta: {
             title: 'React vs. Vue'

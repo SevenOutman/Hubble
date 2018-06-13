@@ -166,7 +166,7 @@
         return `https://img.shields.io/badge/since-${this.since}-409eff.svg?style=flat-square`
       },
       shareLink() {
-        return `https://hubble.js.org/#/owner=${this.owner}&repo=${this.repo}&start`
+        return `https://hubble.js.org?owner=${this.owner}&repo=${this.repo}&start`
       },
       shareMarkdown() {
         return `[![Hubble](${this.badgeImgLink})](${this.shareLink})`

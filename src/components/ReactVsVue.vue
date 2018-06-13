@@ -78,7 +78,7 @@
         </el-form-item>
       </el-form>
       <div class="divider">or</div>
-      <div class="fb-share-button" data-href="https://hubble.js.org/#/react-vs-vue" data-layout="button_count"
+      <div class="fb-share-button" data-href="https://hubble.js.org/react-vs-vue" data-layout="button_count"
            data-size="small" data-mobile-iframe="true">
         <a target="_blank"
            href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fhubble.js.org%2F%23%2Freact-vs-vue&amp;src=sdkpreparse"
@@ -142,7 +142,7 @@
       title: 'React vs. Vue',
       meta: [
         // facebook
-        { property: 'og:url', content: 'https://hubble.js.org/#/react-vs-vue' },
+        { property: 'og:url', content: 'https://hubble.js.org/react-vs-vue' },
         { property: 'og:title', content: 'React vs. Vue · Hubble' },
         { property: 'og:description', content: '100k stars race between React and Vue is LIVE now.' },
         { property: 'og:image', content: 'https://hubble.js.org/static/react-vs-vue.png' },
@@ -197,7 +197,7 @@
         }
         const params = {
           text,
-          url: 'https://hubble.js.org/#/react-vs-vue',
+          url: 'https://hubble.js.org/react-vs-vue',
           hashtags: ['vuejs', 'reactjs', 'javascript']
         }
 
@@ -234,7 +234,7 @@
         return `https://img.shields.io/badge/Hubble-React%20vs%20Vue-409eff.svg?style=flat-square`
       },
       shareLink() {
-        return `https://hubble.js.org/#/react-vs-vue`
+        return `https://hubble.js.org/react-vs-vue`
       },
       shareMarkdown() {
         return `[![Hubble](${this.badgeImgLink})](${this.shareLink})`
@@ -719,7 +719,9 @@
     },
     mounted() {
       window.addEventListener('resize', this.resizeChart)
-      this.start()
+      if (!window.__PRERENDER_INJECTED) {
+        this.start()
+      }
 
       this.interval = setInterval(() => {
         this.showDiff = !this.showDiff
