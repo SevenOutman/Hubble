@@ -84,7 +84,7 @@ const webpackConfig = merge(baseWebpackConfig, {
     // split vendor js into its own file
     new webpack.optimize.CommonsChunkPlugin({
       name: 'vendor',
-      minChunks (module) {
+      minChunks(module) {
         // any required modules inside node_modules are extracted to vendor
         return (
           module.resource &&
@@ -122,13 +122,17 @@ const webpackConfig = merge(baseWebpackConfig, {
     // prerender spa
     new PrerenderSPAPlugin({
       staticDir: path.join(__dirname, '../dist'),
-      routes: [ '/react-vs-vue' ],
+      routes: ['/react-vs-vue'],
 
       renderer: new Renderer({
         inject: {
           headless: true
         },
-        headless: false,
+        // @see https://github.com/chrisvfritz/prerender-spa-plugin/issues/200#issuecomment-391204354
+        // REMOVED headless: false,
+
+        // @see https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#chrome-headless-fails-due-to-sandbox-issues
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
         renderAfterDocumentEvent: 'render-event'
       })
     })
