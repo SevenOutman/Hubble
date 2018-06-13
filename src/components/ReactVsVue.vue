@@ -81,7 +81,7 @@
       <div class="fb-share-button" data-href="https://hubble.js.org/react-vs-vue" data-layout="button_count"
            data-size="small" data-mobile-iframe="true">
         <a target="_blank"
-           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fhubble.js.org%2F%23%2Freact-vs-vue&amp;src=sdkpreparse"
+           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fhubble.js.org%2Freact-vs-vue&amp;src=sdkpreparse"
            class="fb-xfbml-parse-ignore"
            style="text-decoration: none"
         >
