@@ -139,6 +139,7 @@
   export default {
     name: 'ReactVsVue',
     metaInfo: {
+      title: 'React vs. Vue',
       meta: [
         // facebook
         { property: 'og:url', content: 'https://hubble.js.org/#/react-vs-vue' },

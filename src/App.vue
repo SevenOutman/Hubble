@@ -1,7 +1,9 @@
 <template>
   <div id="app">
     <img src="./assets/logo.png" alt="Hubble" style="opacity: 0;position: fixed;z-index: -1">
-    <el-alert type="warning" title=""><b>React vs. Vue 100k<i class="el-icon-star-on"></i> race is <router-link to="/react-vs-vue">LIVE</router-link> now.</b></el-alert>
+    <el-alert type="warning" title=""><b>React vs. Vue 100k<i class="el-icon-star-on"></i> race is
+      <router-link to="/react-vs-vue">LIVE</router-link>
+      now.</b></el-alert>
     <router-view class="router-view" />
     <el-dialog
       :title="dialogTitle || 'Error: Forbidden'"
@@ -49,6 +51,11 @@
 
   export default {
     name: 'App',
+    metaInfo: {
+      titleTemplate(title) {
+        return title ? `${title} · Hubble` : 'Hubble'
+      }
+    },
     data() {
       return {
         accessToken: '',
