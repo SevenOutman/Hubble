@@ -409,22 +409,24 @@
                 type: 'dashed',
               },
             },
-            max: ({ max, min }) => {
-              let paddingTop = 240
-              let paddingBottom = 50
-              let minAxis = Math.floor((min - paddingBottom) / 100) * 100
-              let markHeight = 43
-              let chartFullHeight = this.$refs.chart.$el.clientHeight
-              // (maxAxis - max) / (maxAxis - minAxis) = markHeight / chartFullHeight
-              let maxAxis = (chartFullHeight * max - markHeight * minAxis) / (chartFullHeight - markHeight)
-              let closedHundred = Math.ceil(maxAxis / 100) * 100
-              return closedHundred
-            },
-            min: ({ min }) => {
-              let paddingBottom = 50
-              let closedHundred = Math.floor((min - paddingBottom) / 100) * 100
-              return closedHundred
-            },
+            // max: ({ max, min }) => {
+            //   let paddingTop = 240
+            //   let paddingBottom = 50
+            //   let minAxis = Math.floor((min - paddingBottom) / 100) * 100
+            //   let markHeight = 43
+            //   let chartFullHeight = this.$refs.chart.$el.clientHeight
+            //   (maxAxis - max) / (maxAxis - minAxis) = markHeight / chartFullHeight
+            // let maxAxis = (chartFullHeight * max - markHeight * minAxis) / (chartFullHeight - markHeight)
+            // let closedHundred = Math.ceil(maxAxis / 100) * 100
+            // return closedHundred
+            // },
+            // min: ({ min }) => {
+            //   let paddingBottom = 50
+            //   let closedHundred = Math.floor((min - paddingBottom) / 100) * 100
+            //   return closedHundred
+            // },
+            max: ({ max }) => Math.floor((max + 100) / 10) * 10,
+            min: ({ min }) => Math.ceil((min - 100) / 10) * 10,
           },
           // dataZoom: [
           //   {
