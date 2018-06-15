@@ -354,6 +354,19 @@
             offset: [0, 12],
           },
         }
+
+        const goal = {
+          data: [
+            {
+              yAxis: 100000,
+              label: {
+                formatter() {
+                  return 'Goal'
+                },
+              },
+            },
+          ],
+        }
         return {
           tooltip: {
             trigger: 'axis',
@@ -465,6 +478,7 @@
               },
               this.reactCount > this.vueCount ? upperMark : lowerMark,
             ),
+            markLine: this.reactCount > this.vueCount ? goal : null,
             data: [...this.reactLineData],
           }, {
             name: 'Vue',
@@ -490,6 +504,7 @@
               },
               this.vueCount >= this.reactCount ? upperMark : lowerMark,
             ),
+            markLine: this.vueCount >= this.reactCount ? goal : null,
             data: [...this.vueLineData],
           },
             // {
