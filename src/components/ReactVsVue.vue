@@ -408,8 +408,12 @@
             axisLabel: {
               color: '#333333',
             },
+            min({ min }) {
+              const fiveMinsAgo = +moment(min).subtract(300, 'seconds')
+              return Math.max(fiveMinsAgo, min)
+            },
             max({ max }) {
-              return +moment(max).add(300, 'seconds')
+              return +moment(max).add(120, 'seconds')
             },
           },
           yAxis: {
