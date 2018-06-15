@@ -20,6 +20,7 @@
     "element-ui": "^2.3.2",
     "graphql": "^0.13.2",
     "graphql-tag": "^2.8.0",
+    "lodash.merge": "^4.6.1",
     "moment": "^2.22.0",
     "netlify-auth-providers": "^1.0.0-alpha5",
     "parse-link-header": "^1.0.1",

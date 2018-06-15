@@ -134,6 +134,7 @@
   import axios from 'axios'
   import EventBus from '../bus'
   import moment from 'moment'
+  import _merge from 'lodash.merge'
   import { fetchStargazerCount, graphqlFetchStargazerCount, graphqlFetchStargazers, restFetchStargazers } from '@/utils'
 
   export default {
@@ -148,8 +149,8 @@
         { property: 'og:image', content: 'https://hubble.js.org/static/react-vs-vue.png' },
         // twitter
         { property: 'twitter:title', content: 'React vs. Vue · Hubble' },
-        { property: 'twitter:description', content: '100k stars race between React and Vue is LIVE now.' }
-      ]
+        { property: 'twitter:description', content: '100k stars race between React and Vue is LIVE now.' },
+      ],
     },
     data() {
       return {
@@ -167,12 +168,15 @@
         reactLineData: [],
         vueLineData: [],
 
+        reactLineDataNow: null,
+        vueLineDataNow: null,
+
         lineDataPlaceholder: [],
 
         showShareButton: false,
         showShareDialog: false,
 
-        chartType: 'bar',
+        chartType: 'line',
         errorMessage: '',
 
         timeout: {
@@ -198,7 +202,7 @@
         const params = {
           text,
           url: 'https://hubble.js.org/react-vs-vue',
-          hashtags: ['vuejs', 'reactjs', 'javascript']
+          hashtags: ['vuejs', 'reactjs', 'javascript'],
         }
 
         function composeParams(params) {
@@ -340,15 +344,21 @@
         }
       },
       lineChartOptions() {
-
+        const upperMark = {}
+        const lowerMark = {
+          symbolRotate: 180,
+          label: {
+            offset: [0, 12],
+          },
+        }
         return {
           tooltip: {
             trigger: 'axis',
             formatter: ([repo1, repo2]) => {
               let timeFormat = 'YYYY-MM-DD'
-              if (repo1.seriesIndex > 1 || repo1.dataIndex === this.reactLineData.length - 1) {
-                timeFormat = 'YYYY-MM-DD HH:mm:ss'
-              }
+              // if (repo1.seriesIndex > 1 || repo1.dataIndex === this.reactLineData.length - 1) {
+              timeFormat = 'YYYY-MM-DD HH:mm:ss'
+              // }
               const numberWithCommas = (x) => {
                 if (isNaN(x)) return '?'
                 return Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -359,17 +369,18 @@
               }
 
               return tooltip
-            }
+            },
           },
           grid: {
             top: 12,
-            bottom: 40,
+            bottom: 5,
             left: window.innerWidth < 500 ? 12 : '8%',
             right: window.innerWidth < 500 ? 20 : '8%',
             containLabel: true,
           },
           xAxis: {
             type: 'time',
+            minInterval: 1000 * 60,
             axisLine: {
               lineStyle: {
                 color: '#cccccc',
@@ -380,6 +391,9 @@
             },
             axisLabel: {
               color: '#333333',
+            },
+            max({ max }) {
+              return +moment(max).add(300, 'seconds')
             },
           },
           yAxis: {
@@ -412,17 +426,17 @@
               return closedHundred
             },
           },
-          dataZoom: [
-            {
-              type: 'inside',
-              start: 75,
-              minSpan: 25,
-            },
-            {
-              minSpan: 25,
-              start: 75
-            }
-          ],
+          // dataZoom: [
+          //   {
+          //     type: 'inside',
+          //     start: 75,
+          //     minSpan: 25,
+          //   },
+          //   {
+          //     minSpan: 25,
+          //     start: 75
+          //   }
+          // ],
           series: [{
             name: 'React',
             type: 'line',
@@ -433,7 +447,20 @@
             itemStyle: {
               color: '#61dafb',
             },
-            data: this.reactLineData,
+            markPoint: _merge(
+              {
+                label: {
+                  formatter: () => {
+                    return this.reactCount
+                  },
+                },
+                data: [
+                  { type: 'max', valueDim: 'x' },
+                ],
+              },
+              this.reactCount > this.vueCount ? upperMark : lowerMark,
+            ),
+            data: [...this.reactLineData],
           }, {
             name: 'Vue',
             type: 'line',
@@ -444,34 +471,50 @@
             itemStyle: {
               color: '#41b883',
             },
-            data: this.vueLineData,
-          }, {
-            name: 'React(est.)',
-            type: 'line',
-            showSymbol: false,
-            lineStyle: {
-              color: '#61dafb',
-              opacity: 0.2
-            },
-            itemStyle: {
-              color: '#61dafb',
-              opacity: 0.2
-            },
-            data: []
-          }, {
-            name: 'Vue(est.)',
-            type: 'line',
-            showSymbol: false,
-            lineStyle: {
-              color: '#41b883',
-              opacity: 0.2
-            },
-            itemStyle: {
-              color: '#41b883',
-              opacity: 0.2
-            },
-            data: []
-          }],
+            markPoint: _merge(
+              {
+                label: {
+                  formatter: () => {
+                    return this.vueCount
+                  },
+                },
+                data: [
+                  { type: 'max', valueDim: 'x' },
+                ],
+
+              },
+              this.vueCount >= this.reactCount ? upperMark : lowerMark,
+            ),
+            data: [...this.vueLineData],
+          },
+            // {
+            //   name: 'React(est.)',
+            //   type: 'line',
+            //   showSymbol: false,
+            //   lineStyle: {
+            //     color: '#61dafb',
+            //     opacity: 0.2,
+            //   },
+            //   itemStyle: {
+            //     color: '#61dafb',
+            //     opacity: 0.2,
+            //   },
+            //   data: [],
+            // }, {
+            //   name: 'Vue(est.)',
+            //   type: 'line',
+            //   showSymbol: false,
+            //   lineStyle: {
+            //     color: '#41b883',
+            //     opacity: 0.2,
+            //   },
+            //   itemStyle: {
+            //     color: '#41b883',
+            //     opacity: 0.2,
+            //   },
+            //   data: [],
+            // },
+          ],
         }
       },
     },
@@ -490,7 +533,7 @@
           }],
           symbolRotate: 20,
           label: {
-            offset: [-3, 0]
+            offset: [-3, 0],
           },
         }
         const lowerMark = {
@@ -499,7 +542,7 @@
           }],
           symbolRotate: 200,
           label: {
-            offset: [3, 10]
+            offset: [3, 10],
           },
         }
         this.$nextTick(() => {
@@ -517,7 +560,7 @@
 
             if (this.reactLineData.length >= 2) {
               let latest = this.reactLineData[this.reactLineData.length - 1]
-              let previous = this.reactLineData[this.reactLineData.length - 2]
+              let previous = this.reactLineData[0] //this.reactLineData[this.reactLineData.length - 2]
               now = latest[0]
               reactEstData.push(latest)
               reactRate = (latest[1] - previous[1]) / (latest[0] - previous[0])
@@ -526,7 +569,7 @@
 
             if (this.vueLineData.length >= 2) {
               let latest = this.vueLineData[this.vueLineData.length - 1]
-              let previous = this.vueLineData[this.vueLineData.length - 2]
+              let previous = this.vueLineData[0] // this.vueLineData[this.vueLineData.length - 2]
               vueEstData.push(latest)
               vueRate = (latest[1] - previous[1]) / (latest[0] - previous[0])
               vueEst100k = latest[0] + Math.round((100000 - latest[1]) / vueRate)
@@ -537,28 +580,33 @@
             if (this.reactCount > this.vueCount) {
               let approchRate = vueRate - reactRate
               let estCatchUp = Math.round((this.reactCount - this.vueCount) / approchRate)
-              reactEstData.push([now + estCatchUp, this.reactCount + estCatchUp * reactRate])
-              vueEstData.push([now + estCatchUp, this.vueCount + estCatchUp * vueRate])
+              // reactEstData.push([now + estCatchUp, this.reactCount + estCatchUp * reactRate])
+              // vueEstData.push([now + estCatchUp, this.vueCount + estCatchUp * vueRate])
             }
             reactEstData.push([reactEst100k, 100000])
             vueEstData.push([vueEst100k, 100000])
 
+            this.lineDataPlaceholder = []
+            for (let d = moment(now).add(1, 'second'), i = 0; i < 300; d.add(1, 'second'), i++) {
+              this.lineDataPlaceholder.push([d.format('YYYY-MM-DD HH:mm:ss'), null]);
+            }
+
             this.$refs.chart.mergeOptions({
               series: [
                 {
-                  data: [...this.reactLineData,],
+                  data: [...this.reactLineData, ...this.lineDataPlaceholder],
                   markPoint: this.reactCount >= this.vueCount ? upperMark : lowerMark,
                 },
                 {
-                  data: [...this.vueLineData,],
+                  data: [...this.vueLineData, ...this.lineDataPlaceholder],
                   markPoint: this.vueCount > this.reactCount ? upperMark : lowerMark,
                 },
-                {
-                  data: reactEstData
-                },
-                {
-                  data: vueEstData,
-                }
+                // {
+                //   data: reactEstData,
+                // },
+                // {
+                //   data: vueEstData,
+                // },
               ],
             })
           }
@@ -578,7 +626,7 @@
             await this.fetchHistoryStars()
           } finally {
             this.lineChartLoading = false
-            this.updateLineChartData()
+            // this.updateLineChartData()
             this.pushLineData()
           }
         }
@@ -595,11 +643,11 @@
               const yesterday = data.github.stargazers_count
               const history = [[+moment(updatedAt), yesterday]]
               let stars = yesterday
-              for (let d = moment(updatedAt).subtract(1, 'day'), i = dailyTrends.length - 1; i >= 0; d.subtract(1, 'day'), i--) {
-                stars -= dailyTrends[i]
-                history.unshift([+d, stars])
-              }
-              this.reactLineData = history
+              // for (let d = moment(updatedAt).subtract(1, 'day'), i = dailyTrends.length - 1; i >= 0; d.subtract(1, 'day'), i--) {
+              //   stars -= dailyTrends[i]
+              //   history.unshift([+d, stars])
+              // }
+              this.reactLineData = [] //history
               this.reactStarHistory = history
             }),
           axios('https://bestofjs-api-v1.now.sh/projects/vuejs/vue')
@@ -608,32 +656,38 @@
               const yesterday = data.github.stargazers_count
               const history = [[+moment(updatedAt), yesterday]]
               let stars = yesterday
-              for (let d = moment(updatedAt).subtract(1, 'day'), i = dailyTrends.length - 1; i >= 0; d.subtract(1, 'day'), i--) {
-                stars -= dailyTrends[i]
-                history.unshift([+d, stars])
-              }
-              this.vueLineData = history
+              // for (let d = moment(updatedAt).subtract(1, 'day'), i = dailyTrends.length - 1; i >= 0; d.subtract(1, 'day'), i--) {
+              //   stars -= dailyTrends[i]
+              //   history.unshift([+d, stars])
+              // }
+              this.vueLineData = [] // history
               this.vueStarHistory = history
-            })
+            }),
         ])
       },
       pushLineData() {
-        const now = +moment()
+        const now = moment().format('YYYY-MM-DD HH:mm:ss')
         if (this.vueCount && this.reactCount) {
           // if (this.reactLineDataToday.length) {
-          if (!this.reactLineDataToday) {
-            this.reactLineDataToday = [now, this.reactCount]
-            this.reactLineData.push(this.reactLineDataToday)
-          } else {
-            [this.reactLineDataToday[0], this.reactLineDataToday[1]] = [now, this.reactCount]
-          }
-          if (!this.vueLineDataToday) {
-            this.vueLineDataToday = [now, this.vueCount]
-            this.vueLineData.push(this.vueLineDataToday)
-          } else {
-            [this.vueLineDataToday[0], this.vueLineDataToday[1]] = [now, this.vueCount]
-          }
-          this.updateLineChartData()
+          // if (!this.reactLineDataToday) {
+          //   this.reactLineDataToday = [now, this.reactCount]
+          //   this.reactLineData.push(this.reactLineDataToday)
+          // } else {
+          //   [this.reactLineDataToday[0], this.reactLineDataToday[1]] = [now, this.reactCount]
+          // }
+          // if (!this.vueLineDataToday) {
+          //   this.vueLineDataToday = [now, this.vueCount]
+          //   this.vueLineData.push(this.vueLineDataToday)
+          // } else {
+          //   [this.vueLineDataToday[0], this.vueLineDataToday[1]] = [now, this.vueCount]
+          // }
+
+          this.reactLineDataNow = [now, this.reactCount]
+          this.reactLineData.push(this.reactLineDataNow)
+
+          this.vueLineDataNow = [now, this.vueCount]
+          this.vueLineData.push(this.vueLineDataNow)
+          // this.updateLineChartData()
         }
         this.timeout.line = setTimeout(this.pushLineData, 1000)
       },
@@ -641,14 +695,14 @@
       v4start() {
         return Promise.all([
           this.graphqlFetchReactCount(),
-          this.graphqlFetchVueCount()
+          this.graphqlFetchVueCount(),
         ])
       },
       // REST API
       v3start() {
         return Promise.all([
           this.fetchReactCount(),
-          this.fetchVueCount()
+          this.fetchVueCount(),
         ])
       },
       fetchReactCount() {
