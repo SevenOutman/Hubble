@@ -212,6 +212,9 @@
         return `${base}?${composeParams(params)}`
       },
       diffMessage() {
+        if (this.lineChart) {
+          return 'Final stage'
+        }
         const numberWithCommas = (x) => {
           return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
