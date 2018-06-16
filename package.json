@@ -9,7 +9,7 @@
     "start": "npm run dev",
     "lint": "eslint --ext .js,.vue src",
     "build": "node build/build.js",
-    "predeploy": "npm run build && echo 'hubble.js.org' > dist/CNAME"
+    "predeploy": "npm run build && echo 'hubble.js.org' > dist/CNAME && echo '/*    /index.html   200' > dist/_redirects"
   },
   "dependencies": {
     "apollo-cache-inmemory": "^1.1.12",
