@@ -31,6 +31,8 @@
       <router-link to="/">Home</router-link>
       |
       <router-link to="/repo-race">Repo race</router-link>
+      |
+      <router-link to="/react-vs-vue">React vs. Vue</router-link>
     </footer>
   </div>
 </template>
