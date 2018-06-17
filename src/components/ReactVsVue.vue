@@ -291,7 +291,9 @@
               },
             },
             min: 0,
-            max: 110000,
+            max: ({ max }) => {
+              return Math.ceil(max / 10000) * 10000
+            },
           },
           series: [{
             name: 'GitHub Stars',
