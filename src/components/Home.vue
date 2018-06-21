@@ -234,9 +234,14 @@
               color: '#409EFF',
             },
             markPoint: {
-              data: [{
-                type: 'max',
-              }],
+              label: {
+                formatter: () => {
+                  return this.stargazersCount
+                },
+              },
+              data: [
+                { type: 'max', valueDim: 'x' },
+              ],
             },
             data: this.chartData,
           }],
