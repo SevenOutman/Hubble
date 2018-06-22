@@ -139,6 +139,7 @@
         chartData2: [],
         displayChartData1: [],
         displayChartData2: [],
+        maxTotal: 0,
         requesting: false,
 
         displayStartDate: '',
@@ -180,6 +181,31 @@
         return `${this.repo2.owner}/${this.repo2.repo}`
       },
       chartOptions() {
+        const upperMark = {
+          symbolRotate: 30,
+          label: {
+            offset: [-5, 0],
+          },
+        }
+        const lowerMark = {
+          symbolRotate: -150,
+          label: {
+            offset: [5, 12],
+          },
+        }
+        let repo1Mark = upperMark
+        let repo2Mark = upperMark
+        if (this.displayChartData1.length && this.displayChartData2.length) {
+          if (this.displayChartData1[this.displayChartData1.length - 1][1] >= this.displayChartData2[this.displayChartData2.length - 1][1]) {
+            repo2Mark = lowerMark
+          } else {
+            repo1Mark = lowerMark
+          }
+        } else if (this.displayChartData1.length && !this.displayChartData2.length) {
+          repo2Mark = lowerMark
+        } else if (!this.displayChartData1.length && this.displayChartData2.length) {
+          repo1Mark = lowerMark
+        }
         return {
           tooltip: {
             trigger: 'axis',
@@ -196,7 +222,10 @@
             }
           },
           grid: {
+            top: 12,
             bottom: 5,
+            left: window.innerWidth < 500 ? 12 : '8%',
+            right: window.innerWidth < 500 ? 20 : '8%',
             containLabel: true,
           },
           xAxis: {
@@ -211,7 +240,8 @@
             },
             axisLabel: {
               color: '#333333',
-            }
+            },
+            max: +moment()
           },
           yAxis: {
             type: 'value',
@@ -226,9 +256,10 @@
                 type: 'dashed',
               },
             },
-            max(value) {
-              return (Math.floor(value.max / 100) + 1) * 100
-            },
+            max: (Math.floor(this.maxTotal / 100) + 1) * 100
+            // max(value) {
+            //   return (Math.floor(value.max / 100) + 1) * 100
+            // },
           },
           series: [{
             name: this.repo1fullname,
@@ -244,6 +275,7 @@
               data: [{
                 type: 'max',
               }],
+              ...repo1Mark
             },
             data: this.displayChartData1,
           }, {
@@ -260,6 +292,7 @@
               data: [{
                 type: 'max',
               }],
+              ...repo2Mark
             },
             data: this.displayChartData2,
           }],
@@ -272,7 +305,7 @@
         this.repo1.repo = this.repo1form.repo
         this.repo2.owner = this.repo2form.owner
         this.repo2.repo = this.repo2form.repo
-
+        this.maxTotal = 0
 
         this.displayStartDate = ''
         this.displayEndDate = ''
@@ -410,6 +443,7 @@
           //   })
           //   return Promise.reject()
           // }
+          this.maxTotal = Math.max(this.maxTotal, data.stargazers_count)
           return data
         }, ({ response: { status, headers, data } }) => {
           this.requesting = false
@@ -557,7 +591,7 @@
   .multi-repo {
 
     .el-form {
-      width: 100%;
+      width: 96%;
       max-width: 720px;
       margin: 28px auto 0;
     }

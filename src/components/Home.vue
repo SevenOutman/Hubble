@@ -116,6 +116,7 @@
           if (!loading) {
             const { createdAt, stargazers: { edges, pageInfo: { endCursor, hasPreviousPage, hasNextPage }, totalCount } } = data.repository
             this.since = createdAt.substr(0, 4)
+            this.totalStars = totalCount
 
             if (!hasPreviousPage && edges.length) {
               this.chartData = [
@@ -152,6 +153,7 @@
     data() {
       return {
         repository: '',
+        totalStars: 0,
         afterPointer: null,
         owner: 'js-org',
         repo: 'js.org',
@@ -206,6 +208,7 @@
             axisLabel: {
               color: '#333333',
             },
+            max: +moment()
           },
           yAxis: {
             type: 'value',
@@ -220,9 +223,7 @@
                 type: 'dashed',
               },
             },
-            max(value) {
-              return (Math.floor(value.max / 100) + 1) * 100
-            },
+            max: (Math.floor(this.totalStars / 100) + 1) * 100
           },
           series: [{
             type: 'line',
@@ -288,6 +289,7 @@
         this.errorMessage = ''
         this.chartData = []
         this.requesting = true
+        this.totalStars = 0
 
         // If access token is not present, use APIv3
         if (!localStorage.getItem('access_token')) {
@@ -325,10 +327,10 @@
               this.chartData = [
                 [data.created_at.substr(0, 10), 0],
               ]
+              this.totalStars = data.stargazers_count
             }
             return data
-          })
-          .catch(({ response: { status, headers, data } }) => {
+          }, ({ response: { status, headers, data } }) => {
             this.requesting = false
             if (status === 404) {
               this.errorMessage = data.message
@@ -362,8 +364,7 @@
               this.updateChartData(data.map(star => star.starred_at.substr(0, 10)))
             })
             return data
-          })
-          .catch(({ response: { status, headers } }) => {
+          }, ({ response: { status, headers } }) => {
             this.requesting = false
             if (status > 400) {
               EventBus.$emit('require:accessToken', this.start, {
