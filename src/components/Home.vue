@@ -422,9 +422,6 @@
     flex-direction: column;
 
     margin: 0 auto;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
     text-align: center;
     align-items: center;
 

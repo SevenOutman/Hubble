@@ -257,9 +257,6 @@
               },
             },
             max: (Math.floor(this.maxTotal / 100) + 1) * 100
-            // max(value) {
-            //   return (Math.floor(value.max / 100) + 1) * 100
-            // },
           },
           series: [{
             name: this.repo1fullname,
