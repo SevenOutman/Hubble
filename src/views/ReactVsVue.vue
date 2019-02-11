@@ -135,7 +135,7 @@
   import EventBus from '../bus'
   import moment from 'moment'
   import _merge from 'lodash.merge'
-  import { fetchStargazerCount, graphqlFetchStargazerCount, graphqlFetchStargazers, restFetchStargazers } from '@/utils'
+  import { fetchStargazerCount, graphqlFetchStargazerCount } from '@/utils'
 
   export default {
     name: 'ReactVsVue',

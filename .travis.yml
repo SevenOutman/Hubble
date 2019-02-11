@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - "lts/*"
 
-script: npm run lint
+script: yarn run lint
 
 cache:
   yarn: true

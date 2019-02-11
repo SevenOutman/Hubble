@@ -1,10 +1,10 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import BasicLayout from '@/components/BasicLayout'
-import Home from '@/components/Home'
-import MyStars from '@/components/MyStars'
-import MultiRepo from '@/components/MultiRepo'
-import ReactVsVue from '@/components/ReactVsVue'
+import BasicLayout from '@/views/BasicLayout'
+import Home from '@/views/Home'
+import MyStars from '@/views/MyStars'
+import MultiRepo from '@/views/MultiRepo'
+import ReactVsVue from '@/views/ReactVsVue'
 
 Vue.use(Router)
 
