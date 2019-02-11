@@ -12,6 +12,7 @@ const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin')
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 const PrerenderSPAPlugin = require('prerender-spa-plugin')
 const Renderer = PrerenderSPAPlugin.PuppeteerRenderer
+const VueLoaderPlugin = require('vue-loader/lib/plugin')
 
 const env = require('../config/prod.env')
 
@@ -34,6 +35,7 @@ const webpackConfig = merge(baseWebpackConfig, {
     new webpack.DefinePlugin({
       'process.env': env
     }),
+    new VueLoaderPlugin(),
     new UglifyJsPlugin({
       uglifyOptions: {
         compress: {
