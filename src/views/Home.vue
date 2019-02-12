@@ -8,10 +8,20 @@
     </header>
     <main>
       <div class="input-group el-form-item" :class="{'is-error': errorMessage}">
-        <el-input placeholder="User/Org" v-model="owner" v-if="!requesting" @keydown.enter.native="start" />
-        <el-input placeholder="Repo" v-model="repo" v-if="!requesting" @keydown.enter.native="start" />
+        <el-autocomplete
+                v-model="repoFullName"
+                :fetch-suggestions="querySearchAsync"
+                value-key="full_name"
+                :placeholder="`Search for repository, e.g. ${repo}`"
+                v-if="!requesting"
+                @keydown.enter.native="start"
+        >
+          <template slot-scope="{ item }">
+            <div class="name">{{ item.full_name }}</div>
+          </template>
+        </el-autocomplete>
         <el-button type="primary" :loading="requesting" @click.native="start" :disabled="!owner || !repo">
-          {{ !requesting ? 'Start' : `Counting stars (${stargazersCount})`}}
+          {{ !requesting ? 'Start' : `Counting stars for ${repoFullName}... ${totalStars ? Math.round(100 * stargazersCount / totalStars) : 0}%`}}
         </el-button>
       </div>
       <span>{{ errorMessage}}</span>
@@ -31,10 +41,10 @@
       <router-link to="/react-vs-vue">React vs. Vue</router-link>
     </footer>
     <el-dialog
-      title="Get your Hubble badge"
-      :visible.sync="showShareDialog"
-      :modal="false"
-      width="400px"
+            title="Get your Hubble badge"
+            :visible.sync="showShareDialog"
+            :modal="false"
+            width="400px"
     >
       <el-form label-position="left" label-width="80px">
         <el-form-item label="Badge" style="text-align: start">
@@ -166,6 +176,7 @@
         errorMessage: '',
         showShareButton: false,
         showShareDialog: false,
+        repoFullName: '',
       }
     },
     computed: {
@@ -195,7 +206,7 @@
           },
           grid: {
             bottom: 5,
-            containLabel: true
+            containLabel: true,
           },
           xAxis: {
             type: 'time',
@@ -210,7 +221,7 @@
             axisLabel: {
               color: '#333333',
             },
-            max: +moment()
+            max: +moment(),
           },
           yAxis: {
             type: 'value',
@@ -225,7 +236,7 @@
                 type: 'dashed',
               },
             },
-            max: (Math.floor(this.totalStars / 100) + 1) * 100
+            max: (Math.floor(this.totalStars / 100) + 1) * 100,
           },
           series: [{
             type: 'line',
@@ -252,6 +263,17 @@
       },
     },
     methods: {
+      querySearchAsync(queryString, cb) {
+        if (queryString) {
+          axios('/search/repositories', {
+            params: {
+              q: queryString,
+            },
+          }).then(({ data }) => {
+            cb(data.items)
+          })
+        }
+      },
       suffixChartData() {
         let [lastDate, total] = this.chartData[this.chartData.length - 1]
         let append = []
@@ -287,11 +309,19 @@
         }
       },
       start() {
+        if (!this.repoFullName) {
+          return false
+        }
         this.since = ''
         this.errorMessage = ''
         this.chartData = []
         this.requesting = true
         this.totalStars = 0
+
+        const [owner, repo] = this.repoFullName.split('/')
+
+        this.owner = owner
+        this.repo = repo
 
         // If access token is not present, use APIv3
         if (!localStorage.getItem('access_token')) {
@@ -389,7 +419,7 @@
         // preload
         const image = new Image()
         image.src = val
-      }
+      },
     },
     created() {
       const { owner = '', repo = '' } = this.$route.query
@@ -437,6 +467,7 @@
         position: relative;
         display: inline-block;
         margin-bottom: 0;
+
         &::before {
           content: '';
           background-image: url(../assets/logo.png);
@@ -450,6 +481,7 @@
         }
       }
     }
+
     footer {
       padding: 20px 0 50px;
     }
@@ -461,6 +493,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+
       .input-group {
         display: flex;
         align-items: center;
@@ -470,37 +503,46 @@
 
         flex-shrink: 0;
         position: relative;
+
         & + span {
           color: #f56c6c;
           font-size: 12px;
           line-height: 1;
           padding-top: 4px;
         }
+
         .addon {
           position: absolute;
           left: 100%;
           margin-left: 1em;
           white-space: nowrap;
         }
-        .el-input {
+
+        .el-input,
+        .el-autocomplete {
           flex-grow: 1;
+
           & > input {
             border-top-right-radius: 0;
             border-bottom-right-radius: 0;
           }
+
           & + * {
             margin-left: -1px;
+
             &, & > input {
               border-top-left-radius: 0;
               border-bottom-left-radius: 0;
             }
           }
         }
+
         .el-button {
           flex-grow: 1;
           flex-shrink: 1;
         }
       }
+
       .chart-place {
         flex-grow: 1;
         width: 100%;
